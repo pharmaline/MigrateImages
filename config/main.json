@@ -1,0 +1,56 @@
+{
+	"filename": "etuf_45.json",
+	"pathUpload": "../../uploads/pics",
+	"pathMigrated": "../../fileadmin/_migrated/pics/",
+	"liveserver":
+	{
+		"t3_version": "45",
+		"username": "root",
+		"server": "127.0.0.1",
+		"database": "etuf_aktuell",
+		"password": "Horst1",
+		"tables":
+		{
+			"0":
+		{
+				"table": "tt_content",
+				"select": "uid,pid,tstamp,crdate,cruser_id,sorting,image,hidden,deleted,tx_damttcontent_files",
+				"where": "((CType = 'textpic' OR CType = 'image') AND image <> '')",
+				"additionalWhere": " AND deleted = 0 OR (tx_damttcontent_files=1 AND deleted = 0)"
+			},
+			"1":
+			{
+				"table": "pages",
+				"select": "title",
+				"where": "pid = ",
+				"additionalWhere": " AND deleted = 0"
+			}
+		}
+	},
+	"upgradeserver":
+	{
+		"t3_version": "62",
+		"url": "http://localhost/etuf/62/",
+		"username": "root",
+		"server": "127.0.0.1",
+		"database": "etuf_62",
+		"password": "Horst1",
+		"tables":
+		{
+			"0":
+			{
+				"select": "uid",
+				"table": "sys_file",
+				"where": "",
+				"additionalWhere": "",
+				"fields": "pid,tstamp,creation_date,name,identifier,extension,mime_type"
+			},
+			"1":
+			{
+				"select": "*",
+				"fields": "pid,uid_local,uid_foreign,hidden,tablenames,fieldname,table_local",
+				"table": "sys_file_reference"
+			}
+		}
+	}
+}
