@@ -70,7 +70,28 @@ class MysqlHelper {
     function getColumns($table) {
         return mysqli_query(sprintf('SHOW COLUMNS FROM %s', $table), $this->db);
     }
+    /**
+     * Get a row from a table.
+     * @param str table
+     * @param str where
+     * @return resource A resultset resource
+     */
+    function addColumn($table, $sql) {
+      $alterString = 'ALTER TABLE ' . $table . ' ADD COLUMN ' . $sql;
+      try {
+        $result = mysqli_query($alterString);
 
+
+      } catch (Exception $e) {
+        $error = 'MySql Fehler: ' . $e->getMessage() . "\n";
+      }
+
+      if($result){
+        return $result;
+      } else {
+        return $error;
+      }
+    }
     /**
      * Get a row from a table.
      * @param str table

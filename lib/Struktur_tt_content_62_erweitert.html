@@ -1,0 +1,133 @@
+<html>
+<body>
+<h2>Das ist die Struktur um die Columns erweitert die die Tabelle in der T3 4.5 DB hat</h2>
+<p>
+CREATE TABLE `tt_content` (<br/>
+  `uid` int(11) NOT NULL AUTO_INCREMENT,<br/>
+  `pid` int(11) NOT NULL DEFAULT '0',<br/>
+  `t3ver_oid` int(11) NOT NULL DEFAULT '0',<br/>
+  `t3ver_id` int(11) NOT NULL DEFAULT '0',<br/>
+  `t3ver_wsid` int(11) NOT NULL DEFAULT '0',<br/>
+  `t3ver_label` varchar(255) NOT NULL DEFAULT '',<br/>
+  `t3ver_state` tinyint(4) NOT NULL DEFAULT '0',<br/>
+  `t3ver_stage` int(11) NOT NULL DEFAULT '0',<br/>
+  `t3ver_count` int(11) NOT NULL DEFAULT '0',<br/>
+  `t3ver_tstamp` int(11) NOT NULL DEFAULT '0',<br/>
+  `t3ver_move_id` int(11) NOT NULL DEFAULT '0',<br/>
+  `t3_origuid` int(11) NOT NULL DEFAULT '0',<br/>
+  `tstamp` int(11) unsigned NOT NULL DEFAULT '0',<br/>
+  `crdate` int(11) unsigned NOT NULL DEFAULT '0',<br/>
+  `cruser_id` int(11) unsigned NOT NULL DEFAULT '0',<br/>
+  `hidden` tinyint(4) unsigned NOT NULL DEFAULT '0',<br/>
+  `sorting` int(11) unsigned NOT NULL DEFAULT '0',<br/>
+  `CType` varchar(255) NOT NULL DEFAULT '',<br/>
+  `header` varchar(255) NOT NULL DEFAULT '',<br/>
+  `header_position` varchar(6) NOT NULL DEFAULT '',<br/>
+  `bodytext` mediumtext,<br/>
+  `image` text,<br/>
+  `imagewidth` mediumint(11) unsigned NOT NULL DEFAULT '0',<br/>
+  `imageorient` tinyint(4) unsigned NOT NULL DEFAULT '0',<br/>
+  `imagecaption` text,<br/>
+  `imagecols` tinyint(4) unsigned NOT NULL DEFAULT '0',<br/>
+  `imageborder` tinyint(4) unsigned NOT NULL DEFAULT '0',<br/>
+  `media` text,<br/>
+  `layout` int(11) unsigned NOT NULL DEFAULT '0',<br/>
+  `deleted` tinyint(4) unsigned NOT NULL DEFAULT '0',<br/>
+  `cols` int(11) unsigned NOT NULL DEFAULT '0',<br/>
+  `records` text,<br/>
+  `pages` tinytext,<br/>
+  `starttime` int(11) unsigned NOT NULL DEFAULT '0',<br/>
+  `endtime` int(11) unsigned NOT NULL DEFAULT '0',<br/>
+  `colPos` int(11) unsigned NOT NULL DEFAULT '0',<br/>
+  `subheader` varchar(255) NOT NULL DEFAULT '',<br/>
+  `spaceBefore` smallint(5) unsigned NOT NULL DEFAULT '0',<br/>
+  `spaceAfter` smallint(5) unsigned NOT NULL DEFAULT '0',<br/>
+  `fe_group` varchar(100) NOT NULL DEFAULT '0',<br/>
+  `header_link` varchar(1024) NOT NULL DEFAULT '',<br/>
+  `imagecaption_position` varchar(6) NOT NULL DEFAULT '',<br/>
+  `image_link` text,<br/>
+  `image_zoom` tinyint(3) unsigned NOT NULL DEFAULT '0',<br/>
+  `image_noRows` tinyint(3) unsigned NOT NULL DEFAULT '0',<br/>
+  `image_effects` tinyint(3) unsigned NOT NULL DEFAULT '0',<br/>
+  `image_compression` tinyint(3) unsigned NOT NULL DEFAULT '0',<br/>
+  `altText` text,<br/>
+  `titleText` text,<br/>
+  `longdescURL` text,<br/>
+  `header_layout` varchar(30) NOT NULL DEFAULT '0',<br/>
+  `menu_type` varchar(30) NOT NULL DEFAULT '0',<br/>
+  `list_type` varchar(255) NOT NULL DEFAULT '0',<br/>
+  `table_border` tinyint(3) unsigned NOT NULL DEFAULT '0',<br/>
+  `table_cellspacing` tinyint(3) unsigned NOT NULL DEFAULT '0',<br/>
+  `table_cellpadding` tinyint(3) unsigned NOT NULL DEFAULT '0',<br/>
+  `table_bgColor` int(11) unsigned NOT NULL DEFAULT '0',<br/>
+  `select_key` varchar(80) NOT NULL DEFAULT '',<br/>
+  `sectionIndex` tinyint(3) unsigned NOT NULL DEFAULT '0',<br/>
+  `linkToTop` tinyint(3) unsigned NOT NULL DEFAULT '0',<br/>
+  `file_collections` text,<br/>
+  `filelink_size` tinyint(3) unsigned NOT NULL DEFAULT '0',<br/>
+  `filelink_sorting` tinytext NOT NULL,<br/>
+  `target` varchar(30) NOT NULL DEFAULT '',<br/>
+  `section_frame` int(11) unsigned NOT NULL DEFAULT '0',<br/>
+  `date` int(10) unsigned NOT NULL DEFAULT '0',<br/>
+  `multimedia` tinytext,<br/>
+  `image_frames` int(11) unsigned NOT NULL DEFAULT '0',<br/>
+  `recursive` tinyint(3) unsigned NOT NULL DEFAULT '0',<br/>
+  `imageheight` mediumint(8) unsigned NOT NULL DEFAULT '0',<br/>
+  `rte_enabled` tinyint(4) NOT NULL DEFAULT '0',<br/>
+  `sys_language_uid` int(11) NOT NULL DEFAULT '0',<br/>
+  `tx_impexp_origuid` int(11) NOT NULL DEFAULT '0',<br/>
+  `pi_flexform` mediumtext,<br/>
+  `accessibility_title` varchar(30) NOT NULL DEFAULT '',<br/>
+  `accessibility_bypass` tinyint(3) unsigned NOT NULL DEFAULT '0',<br/>
+  `accessibility_bypass_text` varchar(30) NOT NULL DEFAULT '',<br/>
+  `l18n_parent` int(11) NOT NULL DEFAULT '0',<br/>
+  `l18n_diffsource` mediumblob,<br/>
+  `selected_categories` text,<br/>
+  `category_field` varchar(64) NOT NULL DEFAULT '',<br/>
+  `categories` int(11) NOT NULL DEFAULT '0',<br/>
+  `icon` varchar(255) NOT NULL DEFAULT '',<br/>
+  `icon_position` varchar(255) NOT NULL DEFAULT '',<br/>
+  `icon_size` int(11) unsigned DEFAULT '0',<br/>
+  `icon_type` int(11) unsigned DEFAULT '0',<br/>
+  `icon_color` varchar(255) NOT NULL DEFAULT '',<br/>
+  `icon_background` varchar(255) NOT NULL DEFAULT '',<br/>
+  `tx_bootstrappackage_carousel_item` int(11) unsigned DEFAULT '0',<br/>
+  `tx_bootstrappackage_accordion_item` int(11) unsigned DEFAULT '0',<br/>
+  `tx_news_related_news` int(11) NOT NULL DEFAULT '0',<br/>
+  `external_media_source` varchar(1024) NOT NULL DEFAULT '',<br/>
+  `external_media_ratio` varchar(10) NOT NULL DEFAULT '',<br/>
+  `tx_bootstrappackage_tab_item` int(11) unsigned DEFAULT '0',<br/>
+  `text_align` int(11) DEFAULT NULL,<br/>
+  `text_face` int(11) DEFAULT NULL,<br/>
+  `text_size` int(11) DEFAULT NULL,<br/>
+  `text_color` int(11) DEFAULT NULL,<br/>
+  `text_properties` int(11) DEFAULT NULL,<br/>
+  `tx_mcgooglesitemap_objective` int(11) DEFAULT NULL,<br/>
+  `tx_mcgooglesitemap_lastmod` int(11) DEFAULT NULL,<br/>
+  `tx_mcgooglesitemap_pageuid` int(11) DEFAULT NULL,<br/>
+  `tx_mcgooglesitemap_url` int(11) DEFAULT NULL,<br/>
+  `tx_mcgooglesitemap_changefreq` int(11) DEFAULT NULL,<br/>
+  `tx_mcgooglesitemap_priority` int(11) DEFAULT NULL,<br/>
+  `tx_macinabanners_placement` int(11) DEFAULT NULL,<br/>
+  `tx_macinabanners_mode` int(11) DEFAULT NULL,<br/>
+  `tx_damttcontent_files` int(11) DEFAULT NULL,<br/>
+  `tx_gooffotoboek_function` int(11) DEFAULT NULL,<br/>
+  `tx_gooffotoboek_path` int(11) DEFAULT NULL,<br/>
+  `tx_gooffotoboek_webpath` int(11) DEFAULT NULL,<br/>
+  `tx_t3wimagereflections_reflection` int(11) DEFAULT NULL,<br/>
+  `tx_t3wimagereflections_reflection_height` int(11) DEFAULT NULL,<br/>
+  `tx_t3wimagereflections_reflection_opacity` int(11) DEFAULT NULL,<br/>
+  `tx_dam_images` int(11) DEFAULT NULL,<br/>
+  `tx_dam_files` int(11) DEFAULT NULL,<br/>
+  `splash_layout` int(11) DEFAULT NULL,<br/>
+  `pi_flexform_CType` int(11) DEFAULT NULL,<br/>
+  `module_sys_dmail_category` int(11) DEFAULT NULL,<br/>
+  `ce_flexform` int(11) DEFAULT NULL,<br/>
+  PRIMARY KEY (`uid`),<br/>
+  KEY `t3ver_oid` (`t3ver_oid`,`t3ver_wsid`),<br/>
+  KEY `parent` (`pid`,`sorting`),<br/>
+  KEY `language` (`l18n_parent`,`sys_language_uid`)<br/>
+) ENGINE=InnoDB AUTO_INCREMENT=308 DEFAULT CHARSET=utf8;}
+</p>
+</body>
+</html>

@@ -52,6 +52,32 @@ class Helper {
       $rowDam = $resultDam->fetch_assoc();
       return $rowDam;
     }
+    /* for displaying the JsonArray in humanreadable Form
+    *
+    * @param  array: jsonArray
+    *
+    * return String
+    */
+    private function readJsonArray($jsonArray){
+      foreach($jsonArray as $value){
+        foreach($value as $key1 => $value1){
+
+
+          if($value['tx_damttcontent_files'] == '1'){
+            $string .= $key1 . ': ' . $value1 . '<br/>';
+            $string .= 'image: ' . $value['image'] . '<br/>';
+            $string .= 'uid: ' . $value['uid'] . '<br/>';
+            $string .= 'tx_damttcontent_files: ' . $value['tx_damttcontent_files'] . '<br/>';
+            //$string .= 'dam: ' . $value['dam'] . '<br/>';
+          }
+
+
+          $string .= $key1 . ': ' . $value1 . '<br/>';
+        }
+      }
+      return $string;
+    }// end function
+
     public function writeDatas() {
       // connect to the upgradeserver
       $connectionUpgradeServer = $this->mysql->connect($this->ini_array['upgradeserver']);

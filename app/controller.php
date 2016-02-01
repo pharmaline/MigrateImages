@@ -40,7 +40,29 @@ class Controller {
       $this->worker = new Worker($this->ini_array,$this->mysql,$this->pathToLogfile);
       $this->worker->migrateImages($action);
       //$this->helper->writeDatas();
+    } else if ($action == 'tx_dam') {
+      require('worker.php');
+
+      $this->worker = new Worker($this->ini_array,$this->mysql,$this->pathToLogfile);
+      $this->worker->migrateImages($action);
+      //$this->helper->writeDatas();
+    } else if ($action == 'tt_news') {
+      require('worker.php');
+      echo 'tt_news';
+      die();
+      $this->worker = new Worker($this->ini_array,$this->mysql,$this->pathToLogfile);
+      //$this->worker->migrateImagesTtNews($action);
+
     }
+  } else if ($action == 'alter_table_45') {
+    require('alter.php');
+    $this->alter = new Alter();
+    $this->alter->main();
+    
+
+    //$this->worker->migrateImagesTtNews($action);
+
+  }
     echo '<form method="GET" action="main.php">
       <input type="submit" name="back" value="back" />
       </form>';

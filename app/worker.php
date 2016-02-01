@@ -29,7 +29,6 @@ class Worker {
    * @var ini_array the array with all the configurationdatas
    */
   public function __construct($ini_array,$mysqlObject,$pathToLogfile){
-    $this->pathUpload = $ini_array['pathUpload'];
     $this->pathMigrated = $ini_array['pathMigrated'];
     $this->ini_array = $ini_array;
     $this->mysql = $mysqlObject;
@@ -48,27 +47,90 @@ class Worker {
     $this->connectionLiveServer = $this->mysql->connect($this->ini_array['liveserver']);
   }
   /**
-   * @var action the the action to perform
+   * @var string: the action to perform
    */
   public function migrateImages($action){
-    // read the Datas from the Upgradeserver
-    // add tt_contentConstant to the Uid from tt_content and pagesConstant to the pid from pages
-    // so we only select the Elements from the T3 4.5 Installation
+    // read the Datas from the Liveserver (T3 4.5 Installation)
+    // default we look into tt_content, for tt_news we have to change this
     $select = 'uid,pid,tstamp,crdate,cruser_id,sorting,image,hidden,deleted,tx_damttcontent_files';
     $table = $this->liveServerTables['tt_content']['table'];
-    $where = '((CType = \'textpic\' OR CType = \'image\') AND image <> \'\') AND tx_damttcontent_files = 0 AND deleted = 0';
+    // change the where clause, maybe table and select too, depending on the action
+    switch ($action) {
+      case 'tt_content':
+      $where = '((CType = \'textpic\' OR CType = \'image\') AND image <> \'\') AND tx_damttcontent_files = 0 AND deleted = 0';
+      // take the path from the config file
+      $this->pathUpload = $ini_array['pathUpload'];
+        break;
+      case 'tx_dam':
+      $where = '((CType = \'textpic\' OR CType = \'image\') AND image <> \'\') AND tx_damttcontent_files >= 1 AND deleted = 0';
+      // clear the path, take it from tx_dam.file_path
+      $this->pathUpload = '';
+        break;
+      case 'tt_news':
+      //TODO set the where clause, maybe you have to define the table and the select too!!!!
+      $where = '((CType = \'textpic\' OR CType = \'image\') AND image <> \'\') AND tx_damttcontent_files >= 1 AND deleted = 0';
+        break;
+      default:
+        # code...
+        break;
+    }
+
     $resultTtcontentLiveserver = $this->mysql->select($this->connectionLiveServer,$select,$table,$where);
     // this holds the Images from Liveserver tt_content
     //$imagesArray = array();
     while($rowTtcontentLiveserver = $resultTtcontentLiveserver->fetch_assoc()){
-      //check if we got more than one Image in image
-      $checkImage = strpos($rowTtcontentLiveserver['image'],',');
+
+      if($action == 'tt_content'){
+        //check if we got more than one Image in image
+        $checkImage = strpos($rowTtcontentLiveserver['image'],',');
+      } else if($action == 'tx_dam'){
+        // now look into tx_dam_mm_ref with the uid from tt_content
+        // if you get more than 1 Record then there are more then 1 Images in this CE
+        $select = '*';
+        $table = 'tx_dam_mm_ref';
+        $where = 'uid_foreign = \'' . $rowTtcontentLiveserver['uid'] . '\'';
+        $resultTxDamMmRefLiveserver = $this->mysql->select($this->connectionLiveServer,$select,$table,$where);
+        if($resultTxDamMmRefLiveserver->num_rows > 1){ // more than 1 Image
+          while ($rowTxDamMmRef = $resultTxDamMmRefLiveserver->fetch_assoc()) {
+            // fetch the Imagename from tx_dam
+            $table = 'tx_dam';
+            $select = 'file_name';
+            $where = 'uid = \'' . $rowTxDamMmRef['uid_local'] . '\'';
+            $resultTxDamLiveserver = $this->mysql->select($this->connectionLiveServer,$select,$table,$where);
+            if($resultTxDamLiveserver->num_rows >= 1){
+              $rowTxDam = $resultTxDamLiveserver->fetch_assoc();
+              $arrayImage[] = $rowTxDam['file_name'];
+            }
+          }
+          $checkImage = TRUE;
+        } else if($resultTxDamMmRefLiveserver->num_rows == 1){// only 1 Image
+          $rowTxDamMmRef = $resultTxDamMmRefLiveserver->fetch_assoc();
+          // fetch the Imagename from tx_dam
+          $table = 'tx_dam';
+          $select = 'file_name';
+          $where = 'uid = \'' . $rowTxDamMmRef['uid_local'] . '\'';
+          $resultTxDamLiveserver = $this->mysql->select($this->connectionLiveServer,$select,$table,$where);
+          if($resultTxDamLiveserver->num_rows == 1){
+            $rowTxDam = $resultTxDamLiveserver->fetch_assoc();
+            $rowTtcontentLiveserver['image'] = $rowTxDam['file_name'];
+          }
+          $checkImage = FALSE;
+        }
+        // set the this->uploadPath
+        $this->pathUpload = $rowTxDam['file_path'];
+      }
+echo '<br>';
+var_dump($arrayImage);
+echo '<br>';
+
       // we have more than one image in the CE
       if($checkImage){
-        $arrayImage = explode(',',$rowTtcontentLiveserver['image']);
+        if($action == 'tt_content'){// if we have Images from tt_content split them
+            $arrayImage = explode(',',$rowTtcontentLiveserver['image']);
+        }
+        // no Images from tt_content but from tx_dam, arrayImage is already filled with Imagenames
         // loop through the Images and write them to sys_file and sys_file_reference
         foreach ($arrayImage as $key => $image){
-          $resultFind = $this->findImage($this->pathUpload,$image);
           $rowTtcontentLiveserver['image'] = $image;
           if($resultFind){
             $this->migrateOneImage($rowTtcontentLiveserver,$resultFind);
@@ -78,12 +140,12 @@ class Worker {
         }
         // there is only one Image in CE
       } else {
-        $this->migrateOneImage($rowTtcontentLiveserver,$resultFin);
+        $resultFind = $this->findImage($this->pathUpload,$image);
+        $this->migrateOneImage($rowTtcontentLiveserver,$resultFind);
       }
       $url = $this->ini_array['upgradeserver']['url'] . 'index.php?id=' . $rowTtcontentLiveserver['pid'];
       $linkListe .= '<a href="'. $url .'">Link mit pid:' . $rowTtcontentLiveserver['pid'] . '</a><br/>';
     }
-
     if(($this->logText) AND ($linkListe)){
       echo $linkListe;
       $this->writeLogtext('logText.txt');
@@ -194,171 +256,4 @@ class Worker {
       return $resultShell;
     }
   }
-
-/*
-  public function controller() {
-
-    //TODO nur fürs testen
-    $stringJson = $this->readJsonArray($jsonArray);
-
-    // delete the wrong images
-    require('deleter.php');
-    $this->deleter = new Deleter;
-    $this->logTextDelete = $this->deleter->deleteImages($jsonArray,$this->connectionUpgradeServer,$this->mysql);
-
-    $returnArray = $this->writeImages($jsonArray,$this->connectionUpgradeServer);
-    $this->logTextWrite = $returnArray['logText'];
-    $linkListe = $returnArray['linkListe'];
-    if($this->logTextWrite){
-      $this->logTextWrite .= date('Y-m-d:h:m:s') . " Ich habe " . $this->counter . " Datensätze geschrieben\n";
-      // schreibe die Logdatei
-      $logHandle = fopen($this->pathToLogfile . 'logWrite.txt','w') or die('unable to open Logfile');
-      fwrite($logHandle,$this->logTextWrite);
-      fclose($logHandle);
-      echo '<br>Fertig. Du findest die Logdatei f&uuml;r gespeicherte Datens&auml;tze unter: ' . $this->pathToLogfile . 'logWrite.txt';
-      echo '<br/>Hier die Linkliste:<br/>';
-      echo $linkListe;
-    }
-    if($this->logTextDelete){
-      // schreibe die Logdatei
-      $logHandle = fopen($this->pathToLogfile . 'logDelete.txt','w') or die('unable to open Logfile');
-      fwrite($logHandle,$this->logTextDelete);
-      fclose($logHandle);
-      echo '<br>Fertig. Du findest die Logdatei f&uuml;r gel&ouml;schte Datens&auml;tze unter: ' . $this->pathToLogfile . 'logDelete.txt';
-    }
-  }
-*/
-  /*
-  * write the Images into the Database.
-  *
-  *
-  */
-  /*
-  protected function writeImages($jsonArray){
-  	$linkListe = '';
-    // define the sql variables for the Pages Table
-    $table = 'pages';
-    $fields = 'title';
-    $select = 'uid';
-    foreach($jsonArray as $key => $element){// the Datas from tt_content and write the records
-      // find the Images in pathUpload and return the Result
-      $resultFind = $this->findImage($this->pathUpload,$element['image']);
-      if($resultFind){
-        // copy the image to fileadmin/_migrated/pics/
-        $this->copyImage($this->pathMigrated,$resultFind);
-        //fill the identifier
-        $element['identifier'] = str_replace('../../','',$this->pathMigrated . $element['image']);
-        // copy $element to $elementSysFile
-        $elementSysFile = $element;
-        // delete the uid, we don`t need it here.
-        array_shift($elementSysFile);
-        $insertString = '';
-        $search = '\'';
-        foreach($elementSysFile as $key => $value){
-          if(($key == 'pid') OR ($key == 'tstamp') OR ($key == 'crdate') OR ($key == 'image') OR ($key == 'identifier')){// only these fields
-            if((!strpos($value,$search) AND (strpos($value,$search) != 1))){//check if value is wrapped with ''
-                $insertString .= "'" . trim($value) . "',";
-            }
-          }
-        }
-        // now add the value for fields extension and mime_type
-        // get the extension of the image from $elementSysFile['image']
-        $startPoint = strripos ($elementSysFile['image'],'.');
-        $extension = substr($elementSysFile['image'],$startPoint);
-        if($extension == '.jpg'){
-            $mimeType = 'Image/jpeg';
-        }else{
-            $mimeType = 'Image/'.str_replace('.','',$extension);
-        }
-        $insertString .= '\'' . trim($extension) . '\',\'' . $mimeType . '\'';
-      }else{
-        $this->logText .= 'Konnte Datei: ' . $element['image'] . ' unter ' . $this->pathUpload . ' nicht finden! PID=' . $element['pid'] . '\n';
-      }
-      $fields = $this->ini_array['upgradeserver']['tables'][0]['fields'];
-      //TODO check if the image is already in sys_file with this uid
-      $select = 'uid';
-      $where = 'name=\'' . $element['image'] . '\'';
-      $table = 'sys_file';
-      $resultSysFileCheckImage = $this->mysql->select($this->connectionUpgradeServer,$select,$table,$where);
-      // if there is no image in sys_file then insert the record
-      if($resultSysFileCheckImage->num_rows == 0){
-        //insert the row
-        $insert = $this->mysql->insertRow($this->connectionUpgradeServer,$table,$fields,$insertString);
-        if($insert){
-          $this->logText .= date('Y-m-d:h:m:s') . " Habe Datei: " . $elementSysFile['identifier'] . " pid:".$elementSysFile['pid']." in Tabelle sys_file geschrieben.\n";
-        }else{
-          echo  'Fehler beim Insert in Tabelle '. $table . '!!!\n' . $insertString . '\n';
-          die();
-        }
-      }
-      // after inserting the records into sys_file get the $row['uid']
-      $select = 'uid,pid,name,identifier';
-      $where = 'name=\'' . $element['image'] . '\'';
-      $table = 'sys_file';
-      $resultSysFile = $this->mysql->select($this->connectionUpgradeServer,$select,$table,$where);
-      $row = $resultSysFile->fetch_assoc();
-      // check if the image is NOT in sys_file_reference
-      $where = 'sys_file_reference.uid_local=' . $row['uid'] . ' AND sys_file.name=\'' . $element['image'] . '\'';
-      $select = 'sys_file_reference.uid';
-      $table = 'sys_file_reference,sys_file';
-      $resultCheckImageInSysfilereference = $this->mysql->select($this->connectionUpgradeServer,$select,$table,$where);
-      if($resultCheckImageInSysfilereference->num_rows == 0){
-        // no Image found so insert the Record
-        // prepare the insert string
-        $insertString = '';
-        // uid_local is the uid from sys_file
-        // uid_foreign ist the uid from tt_content
-        // tablenames is tt_content
-        // table_local is sys_file
-        // fieldname is image
-        $fields = $this->ini_array['upgradeserver']['tables'][1]['fields'];
-        $insertString = "'" . $elementSysFile['pid'] . "','" . $row['uid'] . "','" . $element['uid'] . "','" . $element['hidden'] . "','tt_content','image','sys_file'";
-        // insert record in sys_file_reference
-        $insert = $this->mysql->insertRow($this->connectionUpgradeServer,'sys_file_reference',$fields,$insertString);
-        if($insert){
-            $this->logText .= date('Y-m-d:h:m:s') . " Habe Datei: " . $elementSysFile['identifier'] . " in Tabelle sys_file_reference geschrieben.\n";
-            $this->logText .= date('Y-m-d:h:m:s') . " Insert Values: " . $insertString . " in Tabelle sys_file_reference geschrieben.\n";
-        }else{
-          echo 'Fehler beim Insert in Tabelle sys_file_reference!!!' . $insertString . '\n';
-          die();
-        }
-        $this->counter++;
-        $url = $this->ini_array['upgradeserver']['url'] . 'index.php?id=' . $element['pid'];
-        $linkListe .= '<a href="'. $url .'">Link mit pid:' . $element['pid'] . '</a><br/>';
-      }
-
-    }// END insert Loop
-    $returnArray = array('logText' => $this->logText, 'linkListe' => $linkListe);
-    return $returnArray;
-  }// END function
-*/
-
-
-  /* for displaying the JsonArray in humanreadable Form
-  *
-  * @param  array: jsonArray
-  *
-  * return String
-  */
-/*
-  private function readJsonArray($jsonArray){
-    foreach($jsonArray as $value){
-      foreach($value as $key1 => $value1){
-
-
-        if($value['tx_damttcontent_files'] == '1'){
-          $string .= $key1 . ': ' . $value1 . '<br/>';
-          $string .= 'image: ' . $value['image'] . '<br/>';
-          $string .= 'uid: ' . $value['uid'] . '<br/>';
-          $string .= 'tx_damttcontent_files: ' . $value['tx_damttcontent_files'] . '<br/>';
-          //$string .= 'dam: ' . $value['dam'] . '<br/>';
-        }
-
-
-        $string .= $key1 . ': ' . $value1 . '<br/>';
-      }
-    }
-    return $string;
-  }// end function
-  */
 }
