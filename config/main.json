@@ -11,19 +11,41 @@
 		"password": "Horst1",
 		"tables":
 		{
-			"0":
+			"pages":
 		{
-				"table": "tt_content",
-				"select": "uid,pid,tstamp,crdate,cruser_id,sorting,image,hidden,deleted,tx_damttcontent_files",
-				"where": "((CType = 'textpic' OR CType = 'image') AND image <> '')",
-				"additionalWhere": " AND deleted = 0 OR (tx_damttcontent_files=1 AND deleted = 0)"
-			},
-			"1":
-			{
 				"table": "pages",
-				"select": "title",
-				"where": "pid = ",
-				"additionalWhere": " AND deleted = 0"
+				"select": "uid,pid",
+				"where": "deleted = 0",
+				"additionalWhere": "",
+				"constant":	"2000",
+				"filename": "pages.txt"
+			},
+			"tt_content":
+			{
+				"table": "tt_content",
+				"where": "deleted = 0",
+				"select": "uid,pid,tx_damttcontent_files,image",
+				"additionalWhere": "",
+				"constant":	"6000",
+				"filename": "tt_content.txt"
+			},
+			"tx_dam":
+			{
+				"table": "tx_dam",
+				"where": "deleted = 0",
+				"select": "uid,pid",
+				"additionalWhere": "",
+				"constant":	"6000",
+				"filename": "tx_dam.txt"
+			},
+			"tx_dam_mm_ref":
+			{
+				"table": "tx_dam_mm_ref",
+				"where": "tablenames = 'tt_content' AND ident='tx_damttcontent_files'",
+				"select": "uid_foreign",
+				"additionalWhere": "",
+				"constant":	"0",
+				"filename": "tx_dam_mm_ref.txt"
 			}
 		}
 	},
@@ -37,19 +59,34 @@
 		"password": "Horst1",
 		"tables":
 		{
-			"0":
+			"sys_file":
 			{
 				"select": "uid",
 				"table": "sys_file",
 				"where": "",
 				"additionalWhere": "",
-				"fields": "pid,tstamp,creation_date,name,identifier,extension,mime_type"
+				"fields": "pid,tstamp,creation_date,extension,mime_type,name,identifier"
 			},
-			"1":
+			"sys_file_reference":
 			{
 				"select": "*",
+				"where": "",
 				"fields": "pid,uid_local,uid_foreign,hidden,tablenames,fieldname,table_local",
 				"table": "sys_file_reference"
+			},
+			"pages":
+			{
+				"select": "uid",
+				"where": "",
+				"fields": "title",
+				"table": "pages"
+			},
+			"tt_content":
+			{
+				"table": "tt_content",
+				"select": "uid,pid,tstamp,crdate,cruser_id,sorting,image,hidden,deleted,tx_damttcontent_files",
+				"where": "((CType = 'textpic' OR CType = 'image') AND image <> '')",
+				"additionalWhere": " AND deleted = 0 OR (tx_damttcontent_files=1 AND deleted = 0)"
 			}
 		}
 	}

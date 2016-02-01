@@ -23,21 +23,22 @@ class Controller {
     $this->filename = $this->ini_array['filename'];
     // init the MySql Helper class
     require ('../lib/mysql.php');
-    $this->Mysql = new MysqlHelper();
+    $this->mysql = new MysqlHelper();
     require('../lib/helper.php');
-    $this->helper = new Helper($this->ini_array,$this->Mysql,$this->pathToLogfile);
+    $this->helper = new Helper($this->ini_array,$this->mysql,$this->pathToLogfile);
   }
   function main(){
     $action = $_GET['action'];
+
     if ($action == 'read') {
       require('../lib/reader.php');
-      $this->reader = new Reader($this->ini_array,$this->Mysql,$this->pathToLogfile);
+      $this->reader = new Reader($this->ini_array,$this->mysql,$this->pathToLogfile);
       $this->reader->readDatas();
       //$this->helper->readDatas();
-    } else if ($action == 'write') {
-      require('../lib/writer.php');
-      $this->writer = new Writer($this->ini_array,$this->Mysql,$this->pathToLogfile);
-      $this->writer->controller();
+    } else if ($action == 'tt_content') {
+      require('worker.php');
+      $this->worker = new Worker($this->ini_array,$this->mysql,$this->pathToLogfile);
+      $this->worker->migrateImages($action);
       //$this->helper->writeDatas();
     }
     echo '<form method="GET" action="main.php">

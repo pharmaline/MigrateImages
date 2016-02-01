@@ -87,12 +87,16 @@ class MysqlHelper {
      * @return resource A resultset resource
      */
     function select($connection, $select, $table, $where) {
-/*
-      if($table == "pages"){
-        var_dump("SELECT " . $select . " FROM " . $table . " WHERE " . $where);
-        echo "<br>";
-      }
 
+/*
+if($table == "pages"){
+  var_dump("SELECT " . $select . " FROM " . $table . " WHERE " . $where);
+  echo "<br>";
+}
+if($table == "tt_content"){
+  var_dump("SELECT " . $select . " FROM " . $table . " WHERE " . $where);
+  echo "<br>";
+}
       if($table == "tt_content"){
         echo "sql query select:<br>";
         var_dump("SELECT " . $select . " FROM " . $table . " WHERE " . $where);
@@ -117,12 +121,15 @@ if($table == "tt_content"){
   var_dump("SELECT " . $select . " FROM " . $table . " WHERE " . $where);
   echo "<br>";
 }
+if($table == "tx_dam_mm_ref"){
+  var_dump("SELECT " . $select . " FROM " . $table . " WHERE " . $where);
+}
 */
-
+//var_dump("SELECT " . $select . " FROM " . $table . " WHERE " . $where);
 
       try {
         $result = mysqli_query($connection, "SELECT " . $select . " FROM " . $table . " WHERE " . $where);
-      //  if($table == "tx_dam_mm_ref"){var_dump(var_dump("SELECT " . $select . " FROM " . $table . " WHERE " . $where));}
+
 
       } catch (Exception $e) {
         echo 'MySql Fehler: ',  $e->getMessage(), "\n";
@@ -172,8 +179,44 @@ if($table == "tt_content"){
      * @param str where
      * @return bool
      */
-    function updateRow($table, $values, $where) {
-        return mysqli_query(sprintf('UPDATE %s SET %s WHERE %s', $table, $values, $where));
+    function updateRow($connection,$table, $values, $where) {
+
+      /*
+      var_dump($updateString);
+      echo '<br>';
+      var_dump($updateString);
+      echo '<br>';
+      var_dump($update);
+      echo '<br>';
+
+      if($table == 'tx_dam'){
+        var_dump($updateString);
+        echo '<br>';
+      }
+
+      if($table == 'tt_content'){
+        var_dump($updateString);
+        echo '<br>';
+      }
+
+      die();
+      */
+      $updateString = 'UPDATE ' . $table . ' SET ' . $values . ' WHERE ' . $where;
+      if($table == 'sys_file'){
+        var_dump($updateString);
+        echo '<br>';
+      }
+      if($table == 'tx_dam_mm_ref'){
+        var_dump($updateString);
+        echo '<br>';
+      }
+      try {
+        $update = mysqli_query($connection,$updateString);
+        return $update;
+      } catch (Exception $e) {
+        $error = $e->getMessage();
+      }
+        //return mysqli_query(sprintf('UPDATE %s SET %s WHERE %s', $table, $values, $where));
     }
 
     /**
@@ -202,12 +245,14 @@ if($table == "tt_content"){
       $insertString = "INSERT INTO " . $table . " (" . $nameString . ") VALUES (" . $valueString . ")";
 
 
-/*
 
-if($table == "pages"){
+
+/*
+if($table == "sys_file"){
   var_dump($insertString);
   echo "<br>";
 }
+
       if(strpos($values,'RTEmagicC_1-3_Auszeichnungen-7955_jpg.jpg')){
         echo $insertString;die();
       }

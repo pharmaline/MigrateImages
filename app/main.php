@@ -17,11 +17,14 @@ class CheckImages{
   function main(){
     // make the HTML Code
     echo '<form method="GET" action="controller.php">
-      <input type="submit" name="action" value="read" />
-      </form>';
+    <button type="submit" name="action" value="read">lese die Daten</button>
+    </form>';
     echo '<form method="GET" action="controller.php">
-      <input type="submit" name="action" value="write" />
-      </form>';
+    <button type="submit" name="action" value="tt_content">schreibe die TT_Content Daten</button>
+    </form>';
+    echo '<form method="GET" action="controller.php">
+    <button type="submit" name="action" value="dam">schreibe die DAM Daten</button>
+    </form>';
   }
 
 }
