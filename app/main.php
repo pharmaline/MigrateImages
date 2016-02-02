@@ -27,7 +27,7 @@ class CheckImages{
     echo '<a href="../lib/Struktur_tt_content_62_erweitert.html" target="_blank">Struktur f&uuml;r TT_Content</a><br/>';
     echo 'Klick auf den Button und das Script macht die Erweiterungen für Etuf.<br/>Bei anderen Installationen muss du h&auml;ndisch ran.<br/>';
     echo '<form method="GET" action="controller.php">
-    <button type="submit" name="action" value="alter_table_45">füge Column in tt_content,pages hinzu</button>
+    <button type="submit" name="action" value="alter_table_45">f&uuml;ge Column in tt_content,pages hinzu</button>
     </form>';
     echo '<form method="GET" action="controller.php">
     <button type="submit" name="action" value="tt_content">schreibe die TT_Content Daten</button>

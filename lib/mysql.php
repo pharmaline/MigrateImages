@@ -108,9 +108,17 @@ class MysqlHelper {
      * @return resource A resultset resource
      */
     function select($connection, $select, $table, $where) {
+      $sql = "SELECT " . $select . " FROM " . $table . " WHERE " . $where;
 
 /*
-if($table == "pages"){
+var_dump($sql);
+echo "<br>";
+if($table == "tx_dam"){
+  var_dump($sql);
+  echo "<br>";
+}
+
+if($table == "tx_dam"){
   var_dump("SELECT " . $select . " FROM " . $table . " WHERE " . $where);
   echo "<br>";
 }
@@ -149,9 +157,7 @@ if($table == "tx_dam_mm_ref"){
 //var_dump("SELECT " . $select . " FROM " . $table . " WHERE " . $where);
 
       try {
-        $result = mysqli_query($connection, "SELECT " . $select . " FROM " . $table . " WHERE " . $where);
-
-
+        $result = mysqli_query($connection, $sql);
       } catch (Exception $e) {
         echo 'MySql Fehler: ',  $e->getMessage(), "\n";
       }
@@ -265,10 +271,24 @@ if($table == "tx_dam_mm_ref"){
       // build the insert String
       $insertString = "INSERT INTO " . $table . " (" . $nameString . ") VALUES (" . $valueString . ")";
 
-
+      
 
 
 /*
+echo "<br>";
+      var_dump($insertString);
+      echo "<br>";
+if($table == "sys_file"){
+  var_dump($insertString);
+  echo "<br>";
+}
+
+if($table == "sys_file_reference"){
+  var_dump($insertString);
+  echo "<br>";
+  die();
+}
+
 if($table == "sys_file"){
   var_dump($insertString);
   echo "<br>";
@@ -293,6 +313,7 @@ if($table == "sys_file"){
       }
       */
       // try to insert the datas
+
       try {
         $insert = mysqli_query($connection,$insertString);
       } catch (Exception $e) {
@@ -304,6 +325,8 @@ if($table == "sys_file"){
         return $error;
       }
 
+//Only for testing
+//return TRUE;
     }
     /**
     * converts an array to string seperate each item with a seperator

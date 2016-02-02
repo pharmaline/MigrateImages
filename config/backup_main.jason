@@ -1,0 +1,93 @@
+{
+	"filename": "etuf_45.json",
+	"pathUpload": "../../uploads/pics",
+	"pathMigrated": "../../fileadmin/_migrated/pics/",
+	"liveserver":
+	{
+		"t3_version": "45",
+		"username": "root",
+		"server": "127.0.0.1",
+		"database": "etuf_aktuell",
+		"password": "Horst1",
+		"tables":
+		{
+			"pages":
+		{
+				"table": "pages",
+				"select": "uid,pid",
+				"where": "deleted = 0",
+				"additionalWhere": "",
+				"constant":	"2000",
+				"filename": "pages.txt"
+			},
+			"tt_content":
+			{
+				"table": "tt_content",
+				"where": "deleted = 0",
+				"select": "uid,pid,tx_damttcontent_files,image",
+				"additionalWhere": "",
+				"constant":	"6000",
+				"filename": "tt_content.txt"
+			},
+			"tx_dam":
+			{
+				"table": "tx_dam",
+				"where": "deleted = 0",
+				"select": "uid,pid",
+				"additionalWhere": "",
+				"constant":	"6000",
+				"filename": "tx_dam.txt"
+			},
+			"tx_dam_mm_ref":
+			{
+				"table": "tx_dam_mm_ref",
+				"where": "tablenames = 'tt_content' AND ident='tx_damttcontent_files'",
+				"select": "uid_foreign",
+				"additionalWhere": "",
+				"constant":	"0",
+				"filename": "tx_dam_mm_ref.txt"
+			}
+		}
+	},
+	"upgradeserver":
+	{
+		"t3_version": "62",
+		"url": "http://localhost/etuf/62/",
+		"username": "root",
+		"server": "127.0.0.1",
+		"database": "etuf_62",
+		"password": "Horst1",
+		"tables":
+		{
+			"sys_file":
+			{
+				"select": "uid",
+				"table": "sys_file",
+				"where": "",
+				"additionalWhere": "",
+				"fields": "pid,tstamp,creation_date,extension,mime_type,name,identifier"
+			},
+			"sys_file_reference":
+			{
+				"select": "*",
+				"where": "",
+				"fields": "pid,uid_local,uid_foreign,hidden,tablenames,fieldname,table_local,description",
+				"table": "sys_file_reference"
+			},
+			"pages":
+			{
+				"select": "uid",
+				"where": "",
+				"fields": "title",
+				"table": "pages"
+			},
+			"tt_content":
+			{
+				"table": "tt_content",
+				"select": "uid,pid,tstamp,crdate,cruser_id,sorting,image,hidden,deleted,tx_damttcontent_files,imagecaption",
+				"where": "((CType = 'textpic' OR CType = 'image') AND image <> '')",
+				"additionalWhere": " AND tx_damttcontent_files >= 1 AND deleted = 0"
+			}
+		}
+	}
+}

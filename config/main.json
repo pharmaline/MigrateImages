@@ -57,37 +57,80 @@
 		"server": "127.0.0.1",
 		"database": "etuf_62",
 		"password": "Horst1",
-		"tables":
+		"action":
 		{
-			"sys_file":
-			{
-				"select": "uid",
-				"table": "sys_file",
-				"where": "",
-				"additionalWhere": "",
-				"fields": "pid,tstamp,creation_date,extension,mime_type,name,identifier"
-			},
-			"sys_file_reference":
-			{
-				"select": "*",
-				"where": "",
-				"fields": "pid,uid_local,uid_foreign,hidden,tablenames,fieldname,table_local",
-				"table": "sys_file_reference"
-			},
-			"pages":
-			{
-				"select": "uid",
-				"where": "",
-				"fields": "title",
-				"table": "pages"
-			},
 			"tt_content":
 			{
-				"table": "tt_content",
-				"select": "uid,pid,tstamp,crdate,cruser_id,sorting,image,hidden,deleted,tx_damttcontent_files",
-				"where": "((CType = 'textpic' OR CType = 'image') AND image <> '')",
-				"additionalWhere": " AND deleted = 0 OR (tx_damttcontent_files=1 AND deleted = 0)"
+				"tables":
+				{
+					"tt_content":
+					{
+						"table": "tt_content",
+						"select": "uid,pid,tstamp,crdate,cruser_id,sorting,image,hidden,deleted,tx_damttcontent_files,imagecaption",
+						"where": "((CType = 'textpic' OR CType = 'image') AND image <> '')",
+						"additionalWhere": " AND tx_damttcontent_files = 0 AND deleted = 0"
+					},
+					"pages":
+					{
+						"select": "uid",
+						"where": "",
+						"fields": "title",
+						"table": "pages"
+					},
+					"sys_file":
+					{
+						"select": "uid",
+						"table": "sys_file",
+						"where": "",
+						"additionalWhere": "",
+						"fields": "pid,tstamp,creation_date,extension,mime_type,name,identifier"
+					},
+					"sys_file_reference":
+					{
+						"select": "*",
+						"where": "",
+						"fields": "pid,uid_local,uid_foreign,hidden,tablenames,fieldname,table_local,description",
+						"table": "sys_file_reference"
+					}
+				}
+			},
+			"tx_dam":
+			{
+				"tables":
+				{
+					"tt_content":
+					{
+						"table": "tt_content",
+						"select": "uid,pid,tstamp,crdate,cruser_id,sorting,image,hidden,deleted,tx_damttcontent_files,imagecaption",
+						"where": "((CType = 'textpic' OR CType = 'image') AND image <> '')",
+						"additionalWhere": " AND tx_damttcontent_files >= 1 AND deleted = 0"
+					},
+					"pages":
+					{
+						"select": "uid",
+						"where": "",
+						"fields": "title",
+						"table": "pages"
+					},
+					"sys_file":
+					{
+						"select": "uid",
+						"table": "sys_file",
+						"where": "",
+						"additionalWhere": "",
+						"fields": "pid,tstamp,creation_date,extension,mime_type,name,identifier"
+					},
+					"sys_file_reference":
+					{
+						"select": "*",
+						"where": "",
+						"fields": "pid,uid_local,uid_foreign,hidden,tablenames,fieldname,table_local,description",
+						"table": "sys_file_reference"
+					}
+				}
 			}
+
+
 		}
 	}
 }

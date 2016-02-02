@@ -28,15 +28,17 @@ class Worker {
   /**
    * @var ini_array the array with all the configurationdatas
    */
-  public function __construct($ini_array,$mysqlObject,$pathToLogfile){
+  public function __construct($ini_array,$mysqlObject,$pathToLogfile,$action){
+    $this->pathUpload = $ini_array['pathUpload'];
     $this->pathMigrated = $ini_array['pathMigrated'];
     $this->ini_array = $ini_array;
     $this->mysql = $mysqlObject;
     $this->pathToLogfile = $pathToLogfile;
-    $this->liveServerTables = $ini_array['liveserver']['tables'];
-    $this->upgradeServerTables = $ini_array['upgradeserver']['tables'];
-    $this->pagesConstant = $this->upgradeServerTables['pages']['constant'];
-    $this->tt_contentConstant = $this->upgradeServerTables['tt_content']['constant'];
+    $this->liveServer = $ini_array['liveserver'];
+    $this->upgradeServer = $ini_array['upgradeserver'];
+    $this->upgradeServerAction = $ini_array['upgradeserver']['action'][$action];
+    $this->pagesConstant = $this->liveServer['tables']['pages']['constant'];
+    $this->tt_contentConstant = $this->liveServer['tables']['tt_content']['constant'];
     // clear the logText
     $this->logText = '';
     // clear the counter
@@ -47,101 +49,135 @@ class Worker {
     $this->connectionLiveServer = $this->mysql->connect($this->ini_array['liveserver']);
   }
   /**
-   * @var string: the action to perform
+   * @var action the the action to perform
    */
-  public function migrateImages($action){
-    // read the Datas from the Liveserver (T3 4.5 Installation)
-    // default we look into tt_content, for tt_news we have to change this
-    $select = 'uid,pid,tstamp,crdate,cruser_id,sorting,image,hidden,deleted,tx_damttcontent_files';
-    $table = $this->liveServerTables['tt_content']['table'];
-    // change the where clause, maybe table and select too, depending on the action
-    switch ($action) {
-      case 'tt_content':
-      $where = '((CType = \'textpic\' OR CType = \'image\') AND image <> \'\') AND tx_damttcontent_files = 0 AND deleted = 0';
-      // take the path from the config file
-      $this->pathUpload = $ini_array['pathUpload'];
-        break;
-      case 'tx_dam':
-      $where = '((CType = \'textpic\' OR CType = \'image\') AND image <> \'\') AND tx_damttcontent_files >= 1 AND deleted = 0';
-      // clear the path, take it from tx_dam.file_path
-      $this->pathUpload = '';
-        break;
-      case 'tt_news':
-      //TODO set the where clause, maybe you have to define the table and the select too!!!!
-      $where = '((CType = \'textpic\' OR CType = \'image\') AND image <> \'\') AND tx_damttcontent_files >= 1 AND deleted = 0';
-        break;
-      default:
-        # code...
-        break;
+  public function migrateImagesTtNews(){
+    echo "tt_news";
+  }
+  /**
+   * @var action the the action to perform
+   */
+  public function migrateImagesTxDam(){
+    // read the Datas from the Upgradeserver
+    // add tt_contentConstant to the Uid from tt_content and pagesConstant to the pid from pages
+    // so we only select the Elements from the T3 4.5 Installation
+    $select = $this->upgradeServerAction['tables']['tt_content']['select'];
+    $table = $this->upgradeServerAction['tables']['tt_content']['table'];
+    $where = $this->upgradeServerAction['tables']['tt_content']['where'] . $this->upgradeServerAction['tables']['tt_content']['additionalWhere'];
+    $resultTtcontentLiveserver = $this->mysql->select($this->connectionLiveServer,$select,$table,$where);
+    // this holds the Images from Liveserver tt_content
+    $imagesArray = array();
+    $keyArrayImage = 0;
+    while($rowTtcontentLiveserver = $resultTtcontentLiveserver->fetch_assoc()){
+      // now look into tx_dam_mm_ref with the uid from tt_content
+      // if you get more than 1 Record then there are more then 1 Images in this CE
+      $select = '*';
+      $table = 'tx_dam_mm_ref';
+      $where = 'uid_foreign = \'' . $rowTtcontentLiveserver['uid'] . '\'' . ' AND ident = \'tx_damttcontent_files\'';
+      $resultTxDamMmRefLiveserver = $this->mysql->select($this->connectionLiveServer,$select,$table,$where);
+
+      if($resultTxDamMmRefLiveserver->num_rows > 1){ // more than 1 Image
+        while ($rowTxDamMmRef = $resultTxDamMmRefLiveserver->fetch_assoc()) {
+          // fetch the Imagename from tx_dam
+          $table = 'tx_dam';
+          $select = 'file_name,file_path';
+          $where = 'uid = \'' . $rowTxDamMmRef['uid_local'] . '\'';
+          $resultTxDamLiveserver = $this->mysql->select($this->connectionLiveServer,$select,$table,$where);
+          if($resultTxDamLiveserver->num_rows >= 1){
+            $rowTxDam = $resultTxDamLiveserver->fetch_assoc();
+            // set the this->uploadPath
+            $arrayImage[$keyArrayImage]['file_name'] = $rowTxDam['file_name'];
+            $arrayImage[$keyArrayImage]['pathUpload'] = '../../' . $rowTxDam['file_path'];
+            $keyArrayImage++;
+          }
+        }
+        $checkImage = TRUE;
+      } else if($resultTxDamMmRefLiveserver->num_rows == 1){// only 1 Image
+        $rowTxDamMmRef = $resultTxDamMmRefLiveserver->fetch_assoc();
+        // fetch the Imagename from tx_dam
+        $table = 'tx_dam';
+        $select = 'file_name,file_path';
+        $where = 'uid = \'' . $rowTxDamMmRef['uid_local'] . '\'';
+        $resultTxDamLiveserver = $this->mysql->select($this->connectionLiveServer,$select,$table,$where);
+        if($resultTxDamLiveserver->num_rows == 1){//TODO brauch ich die Abfrage? Ich bekomme ja eh nur ein Bild zurück!!
+          $rowTxDam = $resultTxDamLiveserver->fetch_assoc();
+          // set the this->uploadPath
+          $oneImage['file_name'] = $rowTxDam['file_name'];
+          $oneImage['pathUpload'] = '../../' . $rowTxDam['file_path'];
+        }
+        $checkImage = FALSE;
+      }
+      // we have more than one image in the CE
+      if($checkImage){
+        // loop through the Images and write them to sys_file and sys_file_reference
+        foreach ($arrayImage as $key => $item){
+          $rowTtcontentLiveserver['image'] = $item['file_name'];
+          $resultFind = $this->findImage($item['pathUpload'],$rowTtcontentLiveserver['image']);
+          if($resultFind){
+            $this->migrateOneImage($rowTtcontentLiveserver,$item['pathUpload']);
+          } else {
+            echo '<br>line 114: Konnte Datei: ' . $rowTtcontentLiveserver['image'] . ' nicht finden. Pfad: ' . $item['pathUpload'] . '<br>';
+            echo '<br>Das Bild liegt auf der Seite mit der Pid: ' . $rowTtcontentLiveserver['pid'] . '. Bitte manuell pr&uuml;fen.<br>';
+          }
+          $arrayImage = array();
+        }
+        // there is only one Image in CE
+      } else {
+        $resultFind = $this->findImage($oneImage['pathUpload'],$rowTtcontentLiveserver['image']);
+        if($resultFind){
+            $this->migrateOneImage($rowTtcontentLiveserver,$oneImage['pathUpload']);
+        }else {
+          echo '<br>line 125: Konnte Datei: ' . $rowTtcontentLiveserver['image'] . ' nicht finden. Pfad: ' . $oneImage['pathUpload'] . '<br>';
+          echo '<br>Das Bild liegt auf der Seite mit der Pid: ' . $rowTtcontentLiveserver['pid'] . '. Bitte manuell pr&uuml;fen.<br>';
+        }
+
+      }
+      $url = $this->ini_array['upgradeserver']['url'] . 'index.php?id=' . $rowTtcontentLiveserver['pid'];
+      $linkListe .= '<a href="'. $url .'">Link mit pid:' . $rowTtcontentLiveserver['pid'] . '</a><br/>';
     }
 
+    if(($this->logText) AND ($linkListe)){
+      echo $linkListe;
+      $this->writeLogtext('logText.txt');
+      return TRUE;
+    }else {
+      return FALSE;
+    }
+  }
+
+  /**
+   * @var action the the action to perform
+   */
+  public function migrateImagesTtContent(){
+    // read the Datas from the Upgradeserver
+    // add tt_contentConstant to the Uid from tt_content and pagesConstant to the pid from pages
+    // so we only select the Elements from the T3 4.5 Installation
+    $select = $this->liveServerTables['tt_content']['select'];
+    $table = $this->liveServerTables['tt_content']['table'];
+    $where = '((CType = \'textpic\' OR CType = \'image\') AND image <> \'\') AND tx_damttcontent_files = 0 AND deleted = 0';
     $resultTtcontentLiveserver = $this->mysql->select($this->connectionLiveServer,$select,$table,$where);
     // this holds the Images from Liveserver tt_content
     //$imagesArray = array();
     while($rowTtcontentLiveserver = $resultTtcontentLiveserver->fetch_assoc()){
-
-      if($action == 'tt_content'){
-        //check if we got more than one Image in image
-        $checkImage = strpos($rowTtcontentLiveserver['image'],',');
-      } else if($action == 'tx_dam'){
-        // now look into tx_dam_mm_ref with the uid from tt_content
-        // if you get more than 1 Record then there are more then 1 Images in this CE
-        $select = '*';
-        $table = 'tx_dam_mm_ref';
-        $where = 'uid_foreign = \'' . $rowTtcontentLiveserver['uid'] . '\'';
-        $resultTxDamMmRefLiveserver = $this->mysql->select($this->connectionLiveServer,$select,$table,$where);
-        if($resultTxDamMmRefLiveserver->num_rows > 1){ // more than 1 Image
-          while ($rowTxDamMmRef = $resultTxDamMmRefLiveserver->fetch_assoc()) {
-            // fetch the Imagename from tx_dam
-            $table = 'tx_dam';
-            $select = 'file_name';
-            $where = 'uid = \'' . $rowTxDamMmRef['uid_local'] . '\'';
-            $resultTxDamLiveserver = $this->mysql->select($this->connectionLiveServer,$select,$table,$where);
-            if($resultTxDamLiveserver->num_rows >= 1){
-              $rowTxDam = $resultTxDamLiveserver->fetch_assoc();
-              $arrayImage[] = $rowTxDam['file_name'];
-            }
-          }
-          $checkImage = TRUE;
-        } else if($resultTxDamMmRefLiveserver->num_rows == 1){// only 1 Image
-          $rowTxDamMmRef = $resultTxDamMmRefLiveserver->fetch_assoc();
-          // fetch the Imagename from tx_dam
-          $table = 'tx_dam';
-          $select = 'file_name';
-          $where = 'uid = \'' . $rowTxDamMmRef['uid_local'] . '\'';
-          $resultTxDamLiveserver = $this->mysql->select($this->connectionLiveServer,$select,$table,$where);
-          if($resultTxDamLiveserver->num_rows == 1){
-            $rowTxDam = $resultTxDamLiveserver->fetch_assoc();
-            $rowTtcontentLiveserver['image'] = $rowTxDam['file_name'];
-          }
-          $checkImage = FALSE;
-        }
-        // set the this->uploadPath
-        $this->pathUpload = $rowTxDam['file_path'];
-      }
-echo '<br>';
-var_dump($arrayImage);
-echo '<br>';
-
+      //check if we got more than one Image in image
+      $checkImage = strpos($rowTtcontentLiveserver['image'],',');
       // we have more than one image in the CE
       if($checkImage){
-        if($action == 'tt_content'){// if we have Images from tt_content split them
-            $arrayImage = explode(',',$rowTtcontentLiveserver['image']);
-        }
-        // no Images from tt_content but from tx_dam, arrayImage is already filled with Imagenames
+        $arrayImage = explode(',',$rowTtcontentLiveserver['image']);
         // loop through the Images and write them to sys_file and sys_file_reference
         foreach ($arrayImage as $key => $image){
+          $resultFind = $this->findImage($this->pathUpload,$image);
           $rowTtcontentLiveserver['image'] = $image;
           if($resultFind){
-            $this->migrateOneImage($rowTtcontentLiveserver,$resultFind);
+            $this->migrateOneImage($rowTtcontentLiveserver,$this->pathUpload);
           } else {
-            echo '<br>Konnte Datei: ' . $image . ' nicht finden.<br>';
+            echo '<br>Line 164: Konnte Datei: ' . $image . ' nicht finden. Pfad: ' . $this->pathUpload . '<br>';
+            echo '<br>line 139: Das Bild liegt auf der Seite mit der Pid: ' . $rowTtcontentLiveserver['pid'] . '. Bitte manuell pr&uuml;fen.<br>';
           }
         }
         // there is only one Image in CE
       } else {
-        $resultFind = $this->findImage($this->pathUpload,$image);
-        $this->migrateOneImage($rowTtcontentLiveserver,$resultFind);
+        $this->migrateOneImage($rowTtcontentLiveserver,$this->pathUpload);
       }
       $url = $this->ini_array['upgradeserver']['url'] . 'index.php?id=' . $rowTtcontentLiveserver['pid'];
       $linkListe .= '<a href="'. $url .'">Link mit pid:' . $rowTtcontentLiveserver['pid'] . '</a><br/>';
@@ -155,28 +191,24 @@ echo '<br>';
     }
   }
 
-  protected function migrateOneImage($rowTtContent,$resultFind)
-  {
+  protected function migrateOneImage($rowTtContent,$pathUpload) {
     // get the extension of the image from $elementSysFile['image']
-    $startPoint = strripos ($rowTtcontentLiveserver['image'],'.');
-    $extension = substr($rowTtcontentLiveserver['image'],$startPoint);
+    $startPoint = strripos ($rowTtContent['image'],'.');
+    $extension = substr($rowTtContent['image'],$startPoint + 1);// without the .
     $extension = strtolower($extension);
-    if($extension == '.jpg'){
+    if($extension == 'jpg'){
         $mimeType = 'Image/jpeg';
     }else{
         $mimeType = 'Image/'.str_replace('.','',$extension);
     }
-    $this->copyImage($this->pathMigrated,$resultFind);
+    $this->copyImage($this->pathMigrated,$pathUpload,$rowTtContent['image']);
     $this->logText .= "Habe das Bild: " . $image . " nach " . $this->pathMigrated . " kopiert\n";
-
     $select = 'uid';
     $where = 'name=\'' . $rowTtContent['image'] . '\'';
     $table = 'sys_file';
     $resultSysFile = $this->mysql->select($this->connectionUpgradeServer,$select,$table,$where);
     // get the identifier and the name from row['image']
     $identifier = str_replace('../../','',$this->pathMigrated . $rowTtContent['image']);
-
-    //$name = $rowTtContent['image'];
     // start with the insertString
     // pid,tstamp,creation_date,extension,mime_type,name,identifier.
     $insertStringSysFile = '\'' . $rowTtContent['pid'] . '\',\'' . $rowTtContent['tstamp'] . '\',\'' . $rowTtContent['tstamp'] . '\',\'' . $extension . '\',\'' . $mimeType . '\',\'' . $rowTtContent['image'] . '\',\'' . $identifier . '\'';
@@ -192,13 +224,14 @@ echo '<br>';
         die();
       }
     }
+    // search again in sys_file to get the uid from the new Element
+    $resultSysFile = $this->mysql->select($this->connectionUpgradeServer,$select,$table,$where);
     // now insert the Image into sys_file_reference
-    // get the uid from sys_file
     $rowSysFile = $resultSysFile->fetch_assoc();
-    $insertTableSysFileReference = $this->upgradeServerTables['sys_file_reference']['table'];
+    $insertTableSysFileReference = $this->upgradeServerAction['tables']['sys_file_reference']['table'];
     // pid,uid_local,uid_foreign,hidden,tablenames,fieldname,table_local
-    $insertFieldsSysFileReference = $this->upgradeServerTables['sys_file_reference']['fields'];
-    $insertStringSysFileReference = '\'' . $rowTtContent['pid'] . '\',\'' . $rowSysFile['uid'] . '\',\'' . $rowTtContent['uid'] . '\',\'' . $rowTtContent['hidden'] . '\',\'tt_content\',\'image\',\'' . $this->upgradeServerTables['sys_file_reference']['table'] . '\'';
+    $insertFieldsSysFileReference = $this->upgradeServerAction['tables']['sys_file_reference']['fields'];
+    $insertStringSysFileReference = '\'' . $rowTtContent['pid'] . '\',\'' . $rowSysFile['uid'] . '\',\'' . $rowTtContent['uid'] . '\',\'' . $rowTtContent['hidden'] . '\',\'tt_content\',\'image\',\'' . $this->upgradeServerTables['sys_file']['table'] . '\',\'' . $rowTtContent['imagecaption'] . '\'';
     //insert the row into sys_file_reference
     $insert = $this->mysql->insertRow($this->connectionUpgradeServer,$insertTableSysFileReference,$insertFieldsSysFileReference,$insertStringSysFileReference);
     if($insert){
@@ -209,6 +242,7 @@ echo '<br>';
       die();
     }
   }
+
   /*
   * write the Logtext into a file
   *
@@ -232,13 +266,13 @@ echo '<br>';
   *
   * return String
   */
-  function copyImage($path,$resultShell){
-    $cmdCopy = 'cp ' . $resultShell . ' ' . $path;
+  function copyImage($path,$pathUpload,$image){
+    $cmdCopy = 'cp ' . $pathUpload . '\'' . $image . '\' ' . $path;
     $resultShell = shell_exec($cmdCopy);
     if($resultShell){
       return $resultShell;
     }
-  }
+  }// END function
 
   /* find an Image in Path
   *
@@ -248,12 +282,13 @@ echo '<br>';
   * return String
   */
   private function findImage($path,$image){
-    $cmdFind = "find " . $path . " -name " . $image;
+    $cmdFind = "find " . $path . " -name '" . $image . "'";
     // for testing only pid 77 { ["uid"]=> string(3) "537" ["pid"]=> string(2) "77" ["image"]=> string(14) "'_D4M8688.jpg'" }
     $resultShell = shell_exec($cmdFind);
     $resultShell = trim($resultShell);
     if($resultShell){
       return $resultShell;
     }
-  }
+  }// END function
+
 }

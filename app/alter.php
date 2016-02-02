@@ -21,7 +21,7 @@ class Alter{
     $sqlTtContent = 'ALTER TABLE tt_content ADD COLUMN tx_mcgooglesitemap_objective int(11) DEFAULT NULL';
     $res = $this->addColumn($table,$sqlTtContent);
     var_dump($res);
-    die();
+    die();    
   }
 
 }
