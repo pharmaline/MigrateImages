@@ -271,8 +271,8 @@ if($table == "tx_dam_mm_ref"){
       // build the insert String
       $insertString = "INSERT INTO " . $table . " (" . $nameString . ") VALUES (" . $valueString . ")";
 
-      
 
+      
 
 /*
 echo "<br>";

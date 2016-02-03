@@ -128,6 +128,33 @@
 						"table": "sys_file_reference"
 					}
 				}
+			},
+			"tt_news":
+			{
+				"tables":
+				{
+					"tt_news":
+					{
+						"select": "*",
+						"where": "tx_damnews_dam_images >= 1",
+						"additionalWhere": " AND deleted = 0",
+						"table": "tt_news"
+					},
+					"tx_dam":
+					{
+						"select": "*",
+						"where": "tx_damnews_dam_images >= 1",
+						"additionalWhere": " AND deleted = 0",
+						"table": "tx_dam"
+					},
+					"tx_dam_mm_ref":
+					{
+						"select": "*",
+						"where": "uid_foreign = ###uid_foreign###",
+						"additionalWhere": " AND ident='tx_damnews_dam_images' AND deleted = 0",
+						"table": "tx_dam_mm_ref"
+					}
+				}
 			}
 
 
