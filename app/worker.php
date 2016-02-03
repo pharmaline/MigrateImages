@@ -52,7 +52,21 @@ class Worker {
    * @var action the the action to perform
    */
   public function migrateImagesTtNews(){
-    echo "tt_news";
+    $select = $this->upgradeServerAction['tables']['tt_news']['select'];
+    $where = $this->upgradeServerAction['tables']['tt_news']['where'];
+    $table = $this->upgradeServerAction['tables']['tt_news']['table'];
+    var_dump($this->upgradeServerAction);
+    $resultTtNewsLiveserver = $this->mysql->select($this->connectionLiveServer,$select,$table,$where);
+    // loop through the Records and migrate the Images
+    while($rowTtNewsLiveserver = $resultTtNewsLiveserver->fetch_assoc()){
+      // get the uid from tx_dam_mm_ref
+      $select = $this->upgradeServerAction['tables']['tx_dam_mm_ref']['select'];
+      $table = $this->upgradeServerAction['tables']['tx_dam_mm_ref']['table'];
+      $where = str_replace('###uid_foreign###',$rowTtNewsLiveserver['uid'],$this->upgradeServerAction['tables']['tx_dam_mm_ref']['where']);
+        echo "where<br>";
+        var_dump($where);
+    }
+    die();
   }
   /**
    * @var action the the action to perform
@@ -102,8 +116,8 @@ class Worker {
         if($resultTxDamLiveserver->num_rows == 1){//TODO brauch ich die Abfrage? Ich bekomme ja eh nur ein Bild zurück!!
           $rowTxDam = $resultTxDamLiveserver->fetch_assoc();
           // set the this->uploadPath
-          $oneImage['file_name'] = $rowTxDam['file_name'];
-          $oneImage['pathUpload'] = '../../' . $rowTxDam['file_path'];
+          $rowTtcontentLiveserver['image'] = $rowTxDam['file_name'];
+          $rowTtcontentLiveserver['pathUpload'] = '../../' . $rowTxDam['file_path'];
         }
         $checkImage = FALSE;
       }
@@ -119,15 +133,16 @@ class Worker {
             echo '<br>line 114: Konnte Datei: ' . $rowTtcontentLiveserver['image'] . ' nicht finden. Pfad: ' . $item['pathUpload'] . '<br>';
             echo '<br>Das Bild liegt auf der Seite mit der Pid: ' . $rowTtcontentLiveserver['pid'] . '. Bitte manuell pr&uuml;fen.<br>';
           }
+          // clear the Array
           $arrayImage = array();
         }
         // there is only one Image in CE
       } else {
-        $resultFind = $this->findImage($oneImage['pathUpload'],$rowTtcontentLiveserver['image']);
+        $resultFind = $this->findImage($rowTtcontentLiveserver['pathUpload'],$rowTtcontentLiveserver['image']);
         if($resultFind){
-            $this->migrateOneImage($rowTtcontentLiveserver,$oneImage['pathUpload']);
+            $this->migrateOneImage($rowTtcontentLiveserver,$rowTtcontentLiveserver['pathUpload']);
         }else {
-          echo '<br>line 125: Konnte Datei: ' . $rowTtcontentLiveserver['image'] . ' nicht finden. Pfad: ' . $oneImage['pathUpload'] . '<br>';
+          echo '<br>line 125: Konnte Datei: ' . $rowTtcontentLiveserver['image'] . ' nicht finden. Pfad: ' . $rowTtcontentLiveserver['pathUpload'] . '<br>';
           echo '<br>Das Bild liegt auf der Seite mit der Pid: ' . $rowTtcontentLiveserver['pid'] . '. Bitte manuell pr&uuml;fen.<br>';
         }
 
@@ -215,12 +230,12 @@ class Worker {
     // if there is no image in sys_file then insert the record
     if($resultSysFile->num_rows == 0){
       //insert the row into sys_file
-      $insert = $this->mysql->insertRow($this->connectionUpgradeServer,$this->upgradeServerTables['sys_file']['table'],$this->upgradeServerTables['sys_file']['fields'],$insertStringSysFile);
+      $insert = $this->mysql->insertRow($this->connectionUpgradeServer,$this->upgradeServerAction['tables']['sys_file']['table'],$this->upgradeServerAction['tables']['sys_file']['fields'],$insertStringSysFile);
       if($insert){
-        $this->logText .= date('Y-m-d:h:m:s') . " Habe Datei: " . $identifier . " pid:" . $rowTtContent['pid']." in Tabelle " . $this->upgradeServerTables['sys_file']['table'] . " geschrieben.\n";
+        $this->logText .= date('Y-m-d:h:m:s') . " Habe Datei: " . $identifier . " pid:" . $rowTtContent['pid']." in Tabelle " . $this->upgradeServerAction['tables']['sys_file']['table'] . " geschrieben.\n";
         $this->counter++;
       }else{
-        echo  "line 128: Fehler beim Insert in Tabelle " . $this->upgradeServerTables['sys_file']['table'] . "!!!\n" . $insertStringSysFile . "\n";
+        echo  "line 128: Fehler beim Insert in Tabelle " . $this->upgradeServerAction['tables']['sys_file']['table'] . "!!!\n" . $insertStringSysFile . "\n";
         die();
       }
     }
@@ -231,7 +246,7 @@ class Worker {
     $insertTableSysFileReference = $this->upgradeServerAction['tables']['sys_file_reference']['table'];
     // pid,uid_local,uid_foreign,hidden,tablenames,fieldname,table_local
     $insertFieldsSysFileReference = $this->upgradeServerAction['tables']['sys_file_reference']['fields'];
-    $insertStringSysFileReference = '\'' . $rowTtContent['pid'] . '\',\'' . $rowSysFile['uid'] . '\',\'' . $rowTtContent['uid'] . '\',\'' . $rowTtContent['hidden'] . '\',\'tt_content\',\'image\',\'' . $this->upgradeServerTables['sys_file']['table'] . '\',\'' . $rowTtContent['imagecaption'] . '\'';
+    $insertStringSysFileReference = '\'' . $rowTtContent['pid'] . '\',\'' . $rowSysFile['uid'] . '\',\'' . $rowTtContent['uid'] . '\',\'' . $rowTtContent['hidden'] . '\',\'tt_content\',\'image\',\'' . $this->upgradeServerAction['tables']['sys_file']['table'] . '\',\'' . $rowTtContent['imagecaption'] . '\'';
     //insert the row into sys_file_reference
     $insert = $this->mysql->insertRow($this->connectionUpgradeServer,$insertTableSysFileReference,$insertFieldsSysFileReference,$insertStringSysFileReference);
     if($insert){
