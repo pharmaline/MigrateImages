@@ -151,7 +151,7 @@
 					{
 						"select": "*",
 						"where": "uid_foreign = ###uid_foreign###",
-						"additionalWhere": " AND ident='tx_damnews_dam_images' AND deleted = 0",
+						"additionalWhere": " AND ident='tx_damnews_dam_images'",
 						"table": "tx_dam_mm_ref"
 					}
 				}

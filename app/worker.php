@@ -55,16 +55,18 @@ class Worker {
     $select = $this->upgradeServerAction['tables']['tt_news']['select'];
     $where = $this->upgradeServerAction['tables']['tt_news']['where'];
     $table = $this->upgradeServerAction['tables']['tt_news']['table'];
-    var_dump($this->upgradeServerAction);
+    // get the Results from the T3 4.5 Installation
     $resultTtNewsLiveserver = $this->mysql->select($this->connectionLiveServer,$select,$table,$where);
     // loop through the Records and migrate the Images
     while($rowTtNewsLiveserver = $resultTtNewsLiveserver->fetch_assoc()){
       // get the uid from tx_dam_mm_ref
       $select = $this->upgradeServerAction['tables']['tx_dam_mm_ref']['select'];
       $table = $this->upgradeServerAction['tables']['tx_dam_mm_ref']['table'];
-      $where = str_replace('###uid_foreign###',$rowTtNewsLiveserver['uid'],$this->upgradeServerAction['tables']['tx_dam_mm_ref']['where']);
-        echo "where<br>";
-        var_dump($where);
+      $where = str_replace('###uid_foreign###',$rowTtNewsLiveserver['uid'],$this->upgradeServerAction['tables']['tx_dam_mm_ref']['where']) . $this->upgradeServerAction['tables']['tx_dam_mm_ref']['additionalWhere'];
+      $resultTtNewsLiveserver = $this->mysql->select($this->connectionLiveServer,$select,$table,$where);
+      $rowTtNewsLiveserver = $resultTtNewsLiveserver->fetch_assoc();
+        echo "rowTtNewsUpgradeserver<br>";
+        var_dump($rowTtNewsLiveserver);
     }
     die();
   }
