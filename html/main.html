@@ -1,0 +1,34 @@
+<html>
+<head></head>
+<body>
+  <!--<p>Lesen m&uuml;ssen wir die Daten nicht unbedingt. Wir holen sie uns direkt aus der DB der T3 4.5/4.7 Installation</p>
+  <form method="GET" action="controller.php">
+  <button type="submit" name="action" value="read">lese die Daten</button>
+  </form>
+-->
+  <p>Bevor du irgendetwas machst sei sicher, da&szlig; du die DB der T3 4.5/4.7 Installation mit dem Script "Change45" bearbeitet hast.</p>
+  <p>Au&szlig;erdem musst du danach die Tabellen tt_content,tt_news,tx_dam,tx_dam_mm_ref und pages dumpen und in die T3 6.2 DB importieren.</p>
+  <p>Der Dump von tt_content,tt_news, und pages darf kein DROP TABLES und CREATE TABLE enthalten, da die Records der T3 6.2 Installation bestehen bleiben sollen.</p>
+  <p>In der 6.2 Installation muss tt_content,tt_news und pages strukturell ver&auml;ndert werden, damit der Import klappt.</p>
+  <a href="../lib/Struktur_pages_62_erweitert.html" target="_blank">Struktur f&uuml;r Pages</a><br/>
+  <a href="../lib/Struktur_tt_content_62_erweitert.html" target="_blank">Struktur f&uuml;r TT_Content</a><br/>
+  <a href="../lib/Struktur_tt_news_62_erweitert.html" target="_blank">Struktur f&uuml;r TT_News</a><br/>
+  <p>Klick auf den Button und das Script macht die Erweiterungen f&uuml;r Etuf.<br/>Bei anderen Installationen muss du h&auml;ndisch ran.</p>
+  <form method="GET" action="controller.php">
+  <button type="submit" name="action" value="alter_table_45">f&uuml;ge Column in tt_content,tt_news und pages hinzu</button>
+  </form>
+  <form method="GET" action="controller.php">
+  <button type="submit" name="action" value="tt_content">schreibe die TT_Content Daten</button>
+  </form>
+  <form method="GET" action="controller.php">
+  <button type="submit" name="action" value="tx_dam">schreibe die DAM Daten f&uuml;r TT_Content</button>
+  </form>
+  <!--<form method="GET" action="controller.php">
+  <button type="submit" name="action" value="tt_news">BRAUCHEN WIR NICHT schreibe die TT-News Daten</button>
+</form>-->
+  <p>Jetzt werden die DAM Bilder von tt_news zu normalen tt_news Bildern migriert, weil DAM in 6.2 nicht mehr lauff&auml;hig ist.</p>
+  <form method="GET" action="controller.php">
+  <button type="submit" name="action" value="tt_news_dam">schreibe die DAM Daten f&uuml;r TT_News</button>
+  </form>
+</body>
+</html>

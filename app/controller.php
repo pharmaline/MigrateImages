@@ -49,14 +49,14 @@ class Controller {
       require('worker.php');
       $this->worker = new Worker($this->ini_array,$this->mysql,$this->pathToLogfile,$action);
       $this->worker->migrateImagesTtNews();
-    }else if ($action == 'alter_table_45') {
+    } else if ($action == 'tt_news_dam') {
+      require('worker.php');
+      $this->worker = new Worker($this->ini_array,$this->mysql,$this->pathToLogfile,$action);
+      $this->worker->migrateImagesTtNewsDam();
+    } else if ($action == 'alter_table_45') {
       require('alter.php');
       $this->alter = new Alter();
       $this->alter->main();
-
-
-      //$this->worker->migrateImagesTtNews($action);
-
     }
 
     echo '<form method="GET" action="main.php">

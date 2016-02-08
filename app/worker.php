@@ -48,9 +48,104 @@ class Worker {
     // connect to the liveserver
     $this->connectionLiveServer = $this->mysql->connect($this->ini_array['liveserver']);
   }
-  /**
+  /** migrateImagesTtNewsDam this function migrate the DAM Images to normal tt_news Images, cause in 6.2 tt_news 3.6.0
+   *  doesn`t support FAL. So look for the file_name and file_path in the DAM Tables and copy file_name to
+   * tt_news.image and the Image to uploads/pics.
    * @var action the the action to perform
    */
+  public function migrateImagesTtNewsDam(){
+    $select = $this->upgradeServerAction['tables']['tt_news']['select'];
+    $where = $this->upgradeServerAction['tables']['tt_news']['where'];
+    $table = $this->upgradeServerAction['tables']['tt_news']['table'];
+    // get the Results from the T3 4.5 Installation
+    $resultTtNewsLiveserver = $this->mysql->select($this->connectionLiveServer,$select,$table,$where);
+    // loop through the Records and migrate the Images
+
+    while($rowTtNewsLiveserver = $resultTtNewsLiveserver->fetch_assoc()){
+      // get the uid from tx_dam_mm_ref
+      $select = $this->upgradeServerAction['tables']['tx_dam_mm_ref']['select'];
+      $table = $this->upgradeServerAction['tables']['tx_dam_mm_ref']['table'];
+      $where = str_replace('###uid_foreign###',$rowTtNewsLiveserver['uid'],$this->upgradeServerAction['tables']['tx_dam_mm_ref']['where']) . $this->upgradeServerAction['tables']['tx_dam_mm_ref']['additionalWhere'];
+      $resultTxDamMmRefLiveserver = $this->mysql->select($this->connectionLiveServer,$select,$table,$where);
+      // define the Select and Table for tx_dam
+      $selectTxDam = $this->upgradeServerAction['tables']['tx_dam']['select'];
+      $tableTxDam = $this->upgradeServerAction['tables']['tx_dam']['table'];
+    //  $whereTxDam = str_replace('###uid###',$rowTxDamMmRefLiveserver['uid_local'],$this->upgradeServerAction['tables']['tx_dam']['where']) . $this->upgradeServerAction['tables']['tx_dam']['additionalWhere'];
+      if($resultTxDamMmRefLiveserver->num_rows > 1){ // more than one Image
+        while($rowTxDamMmRefLiveserver = $resultTxDamMmRefLiveserver->fetch_assoc()){
+          // fetch the Images from tx_dam and build a commaseperated String from the Imagenames
+          $whereTxDam = str_replace('###uid###',$rowTxDamMmRefLiveserver['uid_local'],$this->upgradeServerAction['tables']['tx_dam']['where']) . $this->upgradeServerAction['tables']['tx_dam']['additionalWhere'];
+          $resultTxDamLiveserver = $this->mysql->select($this->connectionLiveServer,$selectTxDam,$tableTxDam,$whereTxDam);
+          if($resultTxDamLiveserver->num_rows >= 1){
+            $rowTxDamLiveserver = $resultTxDamLiveserver->fetch_assoc();
+            // if we have an Imagename to something
+            if($rowTxDamLiveserver['file_name'] != ''){
+              // copy all Images to uploads/pics/
+              $this->copyImage($this->pathUpload,'../../' . $rowTxDamLiveserver['file_path'],$rowTxDamLiveserver['file_name']);
+              // set the uid_foreign
+              $uid_foreign = $rowTxDamMmRefLiveserver['uid_foreign'];
+              // build the Imagename String
+              $imageNameString .= $rowTxDamLiveserver['file_name'] . ',';
+              // fill the logText
+              $this->logText .= 'Habe die Bilder ' . $rowTxDamLiveserver['file_name'] . 'nach ' . $this->pathUploads . " kopiert\n";
+            }
+          }
+        }
+        // delete last ,
+        $rowTxDamLiveserver['file_name'] = substr($imageNameString,0,-1);
+        $imageNameString = '';
+      } else {// only one Image
+        $imageNameString = '';
+        $rowTxDamMmRefLiveserver = $resultTxDamMmRefLiveserver->fetch_assoc();
+        $uid_foreign = $rowTxDamMmRefLiveserver['uid_foreign'];
+        // now look into tx_dam for file_name and file_path
+        $whereTxDam = str_replace('###uid###',$rowTxDamMmRefLiveserver['uid_local'],$this->upgradeServerAction['tables']['tx_dam']['where']) . $this->upgradeServerAction['tables']['tx_dam']['additionalWhere'];
+        $resultTxDamLiveserver = $this->mysql->select($this->connectionLiveServer,$selectTxDam,$tableTxDam,$whereTxDam);
+        // do we have a result than do the work
+        if($resultTxDamLiveserver->num_rows > 0){
+          $rowTxDamLiveserver = $resultTxDamLiveserver->fetch_assoc();
+          // now copy the Image to uploads/pics
+          $this->copyImage($this->pathUpload,'../../' . $rowTxDamLiveserver['file_path'],$rowTxDamLiveserver['file_name']);
+          $this->logText .= 'Habe das Bild ' . $rowTxDamLiveserver['file_name'] . 'nach ' . $this->pathUploads . " kopiert\n";
+        }
+      }
+
+      if($rowTxDamLiveserver){
+        // prepare the Update of the tt_news Table
+        $table = $this->upgradeServerAction['tables']['tt_news']['table'];
+        $where = 'uid = ' . $uid_foreign;
+        if(!empty($rowTxDamLiveserver['file_name'])){
+          $values = 'image = \'' . $rowTxDamLiveserver['file_name'] . '\',tx_damnews_dam_images = 0';
+        } else {// set tx_damnews_dam_images to 0
+          $values = 'tx_damnews_dam_images = 0';
+        }
+        if($uid_foreign == 11707){
+        $upgradeResult = $this->mysql->updateRow($this->connectionUpgradeServer,$table, $values, $where);
+        }
+
+        if($upgradeResult){
+          $this->logText .= 'Habe die News mit der uid: ' . $uid_foreign . " bearbeitet.\n";
+        } else {
+          $this->error = $upgradeResult;
+        }
+        //die();
+      }
+
+    }
+    if($this->logText){
+      $this->writeLogtext('logTtNewsDam.txt');
+      $this->logText = '';
+    } else {
+      $this->logText = $this->error;
+      $this->writeLogtext('error_logTtNewsDam.txt');
+      $this->logText = '';
+    }
+
+
+  }
+  /** Funktion wird nicht gebraucht
+   * @var action the the action to perform
+
   public function migrateImagesTtNews(){
     $select = $this->upgradeServerAction['tables']['tt_news']['select'];
     $where = $this->upgradeServerAction['tables']['tt_news']['where'];
@@ -70,6 +165,8 @@ class Worker {
     }
     die();
   }
+  */
+
   /**
    * @var action the the action to perform
    */
@@ -268,10 +365,10 @@ class Worker {
   */
   protected function writeLogtext($filename)
   {
-    $this->logTextWrite .= date('Y-m-d:h:m:s') . " Ich habe " . $this->counter . " Datensätze geschrieben\n";
+    $this->logText .= date('Y-m-d:h:m:s') . " Ich habe " . $this->counter . " Datensätze geschrieben\n";
     // schreibe die Logdatei
     $logHandle = fopen($this->pathToLogfile . $filename,'w') or die('unable to open Logfile');
-    fwrite($logHandle,$this->logTextWrite);
+    fwrite($logHandle,$this->logText);
     fclose($logHandle);
     echo '<br>Fertig. Du findest die Logdatei f&uuml;r gespeicherte Datens&auml;tze unter: ' . $this->pathToLogfile . $filename;
   }
@@ -285,6 +382,7 @@ class Worker {
   */
   function copyImage($path,$pathUpload,$image){
     $cmdCopy = 'cp ' . $pathUpload . '\'' . $image . '\' ' . $path;
+
     $resultShell = shell_exec($cmdCopy);
     if($resultShell){
       return $resultShell;

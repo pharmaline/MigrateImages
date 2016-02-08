@@ -15,29 +15,12 @@ ini_set('display_errors', 'On');
 error_reporting(E_ALL);
 class CheckImages{
   function main(){
-    // make the HTML Code
-    echo '<p>Lesen m&uuml;ssen wir die Daten nicht unbedingt. Wir holen sie uns direkt aus der DB der T3 4.5/4.7 Installation</p>';
-    echo '<form method="GET" action="controller.php">
-    <button type="submit" name="action" value="read">lese die Daten</button>
-    </form>';
-    echo '<p>Bevor du irgendetwas machst sei sicher, da&szlig; du die DB der T3 4.5/4.7 Installation mit dem Script "Change45" bearbeitet hast.</p>';
-    echo '<p>Au&szlig;erdem musst du danach die Tabellen tt_content und pages dumpen und in die T3 6.2 DB importieren.</p>';
-    echo 'Daf&uuml;r muss tt_content und pages strukturell verändert werden, damit der Import klappt.<br/>';
-    echo '<a href="../lib/Struktur_pages_62_erweitert.html" target="_blank">Struktur f&uuml;r Pages</a><br/>';
-    echo '<a href="../lib/Struktur_tt_content_62_erweitert.html" target="_blank">Struktur f&uuml;r TT_Content</a><br/>';
-    echo 'Klick auf den Button und das Script macht die Erweiterungen für Etuf.<br/>Bei anderen Installationen muss du h&auml;ndisch ran.<br/>';
-    echo '<form method="GET" action="controller.php">
-    <button type="submit" name="action" value="alter_table_45">f&uuml;ge Column in tt_content,pages hinzu</button>
-    </form>';
-    echo '<form method="GET" action="controller.php">
-    <button type="submit" name="action" value="tt_content">schreibe die TT_Content Daten</button>
-    </form>';
-    echo '<form method="GET" action="controller.php">
-    <button type="submit" name="action" value="tx_dam">schreibe die DAM Daten</button>
-    </form>';
-    echo '<form method="GET" action="controller.php">
-    <button type="submit" name="action" value="tt_news">schreibe die TT-News Daten</button>
-    </form>';
+    // read the HTML Code
+    $htmlCode = file('../html/main.html');
+    foreach($htmlCode as $value){
+      echo $value;
+    }
+    
   }
 
 }
