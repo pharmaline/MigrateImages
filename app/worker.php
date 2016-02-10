@@ -35,6 +35,7 @@ class Worker {
     $this->mysql = $mysqlObject;
     $this->pathToLogfile = $pathToLogfile;
     $this->liveServer = $ini_array['liveserver'];
+    $this->liveServerTables = $this->liveServer['tables'];
     $this->upgradeServer = $ini_array['upgradeserver'];
     $this->upgradeServerAction = $ini_array['upgradeserver']['action'][$action];
     $this->pagesConstant = $this->liveServer['tables']['pages']['constant'];
@@ -60,7 +61,6 @@ class Worker {
     // get the Results from the T3 4.5 Installation
     $resultTtNewsLiveserver = $this->mysql->select($this->connectionLiveServer,$select,$table,$where);
     // loop through the Records and migrate the Images
-
     while($rowTtNewsLiveserver = $resultTtNewsLiveserver->fetch_assoc()){
       // get the uid from tx_dam_mm_ref
       $select = $this->upgradeServerAction['tables']['tx_dam_mm_ref']['select'];
@@ -119,22 +119,28 @@ class Worker {
         } else {// set tx_damnews_dam_images to 0
           $values = 'tx_damnews_dam_images = 0';
         }
+        /*
         if($uid_foreign == 11707){
         $upgradeResult = $this->mysql->updateRow($this->connectionUpgradeServer,$table, $values, $where);
         }
-
+        */
+        $upgradeResult = $this->mysql->updateRow($this->connectionUpgradeServer,$table, $values, $where);
         if($upgradeResult){
           $this->logText .= 'Habe die News mit der uid: ' . $uid_foreign . " bearbeitet.\n";
         } else {
           $this->error = $upgradeResult;
         }
+        $url = $this->ini_array['upgradeserver']['url'] . 'index.php?id=' . $rowTtNewsLiveserver['pid'];
+        $linkListe .= '<a href="'. $url .'">Link mit pid:' . $rowTtNewsLiveserver['pid'] . '</a><br/>';
         //die();
       }
 
     }
-    if($this->logText){
+    if($this->logText AND $linkListe){
       $this->writeLogtext('logTtNewsDam.txt');
       $this->logText = '';
+      echo $linkListe;
+      $linkListe = '';
     } else {
       $this->logText = $this->error;
       $this->writeLogtext('error_logTtNewsDam.txt');
@@ -188,7 +194,6 @@ class Worker {
       $table = 'tx_dam_mm_ref';
       $where = 'uid_foreign = \'' . $rowTtcontentLiveserver['uid'] . '\'' . ' AND ident = \'tx_damttcontent_files\'';
       $resultTxDamMmRefLiveserver = $this->mysql->select($this->connectionLiveServer,$select,$table,$where);
-
       if($resultTxDamMmRefLiveserver->num_rows > 1){ // more than 1 Image
         while ($rowTxDamMmRef = $resultTxDamMmRefLiveserver->fetch_assoc()) {
           // fetch the Imagename from tx_dam
@@ -247,12 +252,12 @@ class Worker {
 
       }
       $url = $this->ini_array['upgradeserver']['url'] . 'index.php?id=' . $rowTtcontentLiveserver['pid'];
-      $linkListe .= '<a href="'. $url .'">Link mit pid:' . $rowTtcontentLiveserver['pid'] . '</a><br/>';
+      $linkListe .= '<a href="'. $url .'">Link mit pid:' . $rowTtcontentLiveserver['pid'] . '</a><p>tt_content uid: ' . $rowTtcontentLiveserver['uid'] . '</p><br/>';
     }
 
     if(($this->logText) AND ($linkListe)){
       echo $linkListe;
-      $this->writeLogtext('logText.txt');
+      $this->writeLogtext('logTextTxDam.txt');
       return TRUE;
     }else {
       return FALSE;
@@ -270,8 +275,7 @@ class Worker {
     $table = $this->liveServerTables['tt_content']['table'];
     $where = '((CType = \'textpic\' OR CType = \'image\') AND image <> \'\') AND tx_damttcontent_files = 0 AND deleted = 0';
     $resultTtcontentLiveserver = $this->mysql->select($this->connectionLiveServer,$select,$table,$where);
-    // this holds the Images from Liveserver tt_content
-    //$imagesArray = array();
+    // loop through the rows from T3 4.5 tt_content
     while($rowTtcontentLiveserver = $resultTtcontentLiveserver->fetch_assoc()){
       //check if we got more than one Image in image
       $checkImage = strpos($rowTtcontentLiveserver['image'],',');
@@ -285,25 +289,34 @@ class Worker {
           if($resultFind){
             $this->migrateOneImage($rowTtcontentLiveserver,$this->pathUpload);
           } else {
-            echo '<br>Line 164: Konnte Datei: ' . $image . ' nicht finden. Pfad: ' . $this->pathUpload . '<br>';
-            echo '<br>line 139: Das Bild liegt auf der Seite mit der Pid: ' . $rowTtcontentLiveserver['pid'] . '. Bitte manuell pr&uuml;fen.<br>';
+            echo '<br>Line 293: Konnte Datei: ' . $image . ' nicht finden. Pfad: ' . $this->pathUpload . '<br>';
+            echo '<br>line 294: Das Bild liegt auf der Seite mit der Pid: ' . $rowTtcontentLiveserver['pid'] . '. Bitte manuell pr&uuml;fen.<br>';
           }
         }
         // there is only one Image in CE
       } else {
-        $this->migrateOneImage($rowTtcontentLiveserver,$this->pathUpload);
+		  // if there is no Image in tt_content we don` have to migrate anything
+		  if($rowTtcontentLiveserver['image'] != ''){
+			$this->migrateOneImage($rowTtcontentLiveserver,$this->pathUpload);
+		  } else {
+			  echo 'Kein Bild in tt_content vorhanden. Pid: ' . $rowTtcontentLiveserver['pid'] . ' Uid: ' . $rowTtcontentLiveserver['uid'] . '<br>';
+		  }
+        
       }
-      $url = $this->ini_array['upgradeserver']['url'] . 'index.php?id=' . $rowTtcontentLiveserver['pid'];
-      $linkListe .= '<a href="'. $url .'">Link mit pid:' . $rowTtcontentLiveserver['pid'] . '</a><br/>';
+	  // if there is no Image in tt_content we don`t have to do anything
+	  if($rowTtcontentLiveserver['image'] != ''){
+		$url = $this->ini_array['upgradeserver']['url'] . 'index.php?id=' . $rowTtcontentLiveserver['pid'];
+		$linkListe .= '<a href="'. $url .'">Link mit pid:' . $rowTtcontentLiveserver['pid'] . '</a><br/>';
+	  }
     }
     if(($this->logText) AND ($linkListe)){
       echo $linkListe;
-      $this->writeLogtext('logText.txt');
+      $this->writeLogtext('logTextTt_content.txt');
       return TRUE;
     }else {
       return FALSE;
     }
-  }
+  }// END function
 
   protected function migrateOneImage($rowTtContent,$pathUpload) {
     // get the extension of the image from $elementSysFile['image']
@@ -345,6 +358,10 @@ class Worker {
     $insertTableSysFileReference = $this->upgradeServerAction['tables']['sys_file_reference']['table'];
     // pid,uid_local,uid_foreign,hidden,tablenames,fieldname,table_local
     $insertFieldsSysFileReference = $this->upgradeServerAction['tables']['sys_file_reference']['fields'];
+    // check if we have to decode
+    if($this->upgradeServerAction['utf8_decode'] == 1){
+      $rowTtContent['imagecaption'] = utf8_decode($rowTtContent['imagecaption']);
+    }
     $insertStringSysFileReference = '\'' . $rowTtContent['pid'] . '\',\'' . $rowSysFile['uid'] . '\',\'' . $rowTtContent['uid'] . '\',\'' . $rowTtContent['hidden'] . '\',\'tt_content\',\'image\',\'' . $this->upgradeServerAction['tables']['sys_file']['table'] . '\',\'' . $rowTtContent['imagecaption'] . '\'';
     //insert the row into sys_file_reference
     $insert = $this->mysql->insertRow($this->connectionUpgradeServer,$insertTableSysFileReference,$insertFieldsSysFileReference,$insertStringSysFileReference);
@@ -363,8 +380,7 @@ class Worker {
   *
   *
   */
-  protected function writeLogtext($filename)
-  {
+  protected function writeLogtext($filename){
     $this->logText .= date('Y-m-d:h:m:s') . " Ich habe " . $this->counter . " Datensätze geschrieben\n";
     // schreibe die Logdatei
     $logHandle = fopen($this->pathToLogfile . $filename,'w') or die('unable to open Logfile');
@@ -382,7 +398,6 @@ class Worker {
   */
   function copyImage($path,$pathUpload,$image){
     $cmdCopy = 'cp ' . $pathUpload . '\'' . $image . '\' ' . $path;
-
     $resultShell = shell_exec($cmdCopy);
     if($resultShell){
       return $resultShell;
