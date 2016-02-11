@@ -188,6 +188,9 @@ class Worker {
     $imagesArray = array();
     $keyArrayImage = 0;
     while($rowTtcontentLiveserver = $resultTtcontentLiveserver->fetch_assoc()){
+				if($this->upgradeServerAction['utf8'] == 1){
+							$rowTtcontentLiveserver['image'] =	utf8_decode($rowTtcontentLiveserver['image']);
+						}
       // now look into tx_dam_mm_ref with the uid from tt_content
       // if you get more than 1 Record then there are more then 1 Images in this CE
       $select = '*';
@@ -235,7 +238,7 @@ class Worker {
             $this->migrateOneImage($rowTtcontentLiveserver,$item['pathUpload']);
           } else {
             echo '<br>line 114: Konnte Datei: ' . $rowTtcontentLiveserver['image'] . ' nicht finden. Pfad: ' . $item['pathUpload'] . '<br>';
-            echo '<br>Das Bild liegt auf der Seite mit der Pid: ' . $rowTtcontentLiveserver['pid'] . '. Bitte manuell pr&uuml;fen.<br>';
+            echo '<br>Das Bild liegt auf der Seite mit der Pid: ' . $rowTtcontentLiveserver['pid'] . ' Uid: ' . $rowTtcontentLiveserver['uid'] . '. Bitte manuell pr&uuml;fen.<br>';
           }
           // clear the Array
           $arrayImage = array();
@@ -246,10 +249,11 @@ class Worker {
         if($resultFind){
             $this->migrateOneImage($rowTtcontentLiveserver,$rowTtcontentLiveserver['pathUpload']);
         }else {
-          echo '<br>line 125: Konnte Datei: ' . $rowTtcontentLiveserver['image'] . ' nicht finden. Pfad: ' . $rowTtcontentLiveserver['pathUpload'] . '<br>';
-          echo '<br>Das Bild liegt auf der Seite mit der Pid: ' . $rowTtcontentLiveserver['pid'] . '. Bitte manuell pr&uuml;fen.<br>';
+			if($rowTtcontentLiveserver['image'] != ''){
+				echo '<br>line 125: Konnte Datei: ' . $rowTtcontentLiveserver['image'] . ' nicht finden. Pfad: ' . $rowTtcontentLiveserver['pathUpload'] . '<br>';
+				echo '<br>Das Bild liegt auf der Seite mit der Pid: ' . $rowTtcontentLiveserver['pid'] . '. Bitte manuell pr&uuml;fen.<br>';
+			}
         }
-
       }
       $url = $this->ini_array['upgradeserver']['url'] . 'index.php?id=' . $rowTtcontentLiveserver['pid'];
       $linkListe .= '<a href="'. $url .'">Link mit pid:' . $rowTtcontentLiveserver['pid'] . '</a><p>tt_content uid: ' . $rowTtcontentLiveserver['uid'] . '</p><br/>';
@@ -301,7 +305,7 @@ class Worker {
 		  } else {
 			  echo 'Kein Bild in tt_content vorhanden. Pid: ' . $rowTtcontentLiveserver['pid'] . ' Uid: ' . $rowTtcontentLiveserver['uid'] . '<br>';
 		  }
-        
+
       }
 	  // if there is no Image in tt_content we don`t have to do anything
 	  if($rowTtcontentLiveserver['image'] != ''){
@@ -358,10 +362,12 @@ class Worker {
     $insertTableSysFileReference = $this->upgradeServerAction['tables']['sys_file_reference']['table'];
     // pid,uid_local,uid_foreign,hidden,tablenames,fieldname,table_local
     $insertFieldsSysFileReference = $this->upgradeServerAction['tables']['sys_file_reference']['fields'];
-    // check if we have to decode
+/*
+// check if we have to decode
     if($this->upgradeServerAction['utf8_decode'] == 1){
       $rowTtContent['imagecaption'] = utf8_decode($rowTtContent['imagecaption']);
     }
+		*/
     $insertStringSysFileReference = '\'' . $rowTtContent['pid'] . '\',\'' . $rowSysFile['uid'] . '\',\'' . $rowTtContent['uid'] . '\',\'' . $rowTtContent['hidden'] . '\',\'tt_content\',\'image\',\'' . $this->upgradeServerAction['tables']['sys_file']['table'] . '\',\'' . $rowTtContent['imagecaption'] . '\'';
     //insert the row into sys_file_reference
     $insert = $this->mysql->insertRow($this->connectionUpgradeServer,$insertTableSysFileReference,$insertFieldsSysFileReference,$insertStringSysFileReference);
@@ -412,7 +418,11 @@ class Worker {
   * return String
   */
   private function findImage($path,$image){
+	 // trotz decode wird Bild mit Umlauten nicht gefunden
+	//$image = utf8_decode($image);
+
     $cmdFind = "find " . $path . " -name '" . $image . "'";
+
     // for testing only pid 77 { ["uid"]=> string(3) "537" ["pid"]=> string(2) "77" ["image"]=> string(14) "'_D4M8688.jpg'" }
     $resultShell = shell_exec($cmdFind);
     $resultShell = trim($resultShell);

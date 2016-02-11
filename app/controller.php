@@ -21,6 +21,7 @@ class Controller {
     $this->ini_string = file_get_contents('../config/main.json');
 
     $this->ini_array = json_decode($this->ini_string, TRUE);
+
     $this->filename = $this->ini_array['filename'];
     // init the MySql Helper class
     require ('../lib/mysql.php');
@@ -44,6 +45,7 @@ class Controller {
       require('worker.php');
       $this->worker = new Worker($this->ini_array,$this->mysql,$this->pathToLogfile,$action);
       $this->worker->migrateImagesTxDam();
+
       //$this->helper->writeDatas();
     } else if ($action == 'tt_news') {
       require('worker.php');
